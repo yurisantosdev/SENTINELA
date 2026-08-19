@@ -1,0 +1,19 @@
+{
+  "name": "sentinela",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@10.2.3",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "docker compose up -d mongo && turbo run dev --parallel",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "setup": "npm install && turbo run setup"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  }
+}

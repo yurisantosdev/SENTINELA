@@ -1,0 +1,17 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+__pycache__/
+*.py[cod]
+.pycache/
+.venv/
+
+node_modules/
+.next/
+.turbo/
+out/
+
+data/

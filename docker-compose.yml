@@ -1,0 +1,12 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: sentinela-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - sentinela-mongo-data:/data/db
+
+volumes:
+  sentinela-mongo-data:

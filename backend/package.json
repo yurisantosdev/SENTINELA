@@ -1,0 +1,11 @@
+{
+  "name": "@sentinela/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "setup": "python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+    "dev": "test -x .venv/bin/uvicorn || npm run setup && .venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "build": "PYTHONPYCACHEPREFIX=.pycache python3 -m compileall app",
+    "typecheck": "PYTHONPYCACHEPREFIX=.pycache python3 -m compileall app"
+  }
+}

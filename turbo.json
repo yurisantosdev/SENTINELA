@@ -1,23 +1,21 @@
 {
-  "$schema": "https://turbo.build/schema.json",
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
   "tasks": {
-    "setup": {
-      "cache": false
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
     },
     "dev": {
       "cache": false,
       "persistent": true
-    },
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**"]
-    },
-    "@sentinela/api#build": {
-      "outputs": []
-    },
-    "typecheck": {
-      "dependsOn": ["^typecheck"],
-      "outputs": []
     }
   }
 }

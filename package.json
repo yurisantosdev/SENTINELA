@@ -1,19 +1,29 @@
 {
-  "name": "sentinela",
-  "version": "0.1.0",
+  "name": "my-turborepo",
   "private": true,
-  "packageManager": "npm@10.2.3",
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
   "scripts": {
-    "dev": "docker compose up -d mongo && turbo run dev --parallel",
     "build": "turbo run build",
-    "typecheck": "turbo run typecheck",
-    "setup": "npm install && turbo run setup"
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "turbo": "latest"
-  }
+    "prettier": "3.9.6",
+    "turbo": "^2.10.12",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": "10.2.3"
+    }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

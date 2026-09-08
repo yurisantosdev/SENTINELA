@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type JobStatus = "idle" | "running" | "completed" | "failed";
@@ -107,10 +108,15 @@ export function RobotDashboard() {
             <small>Inteligência de dados CAT</small>
           </div>
         </div>
-        <span className={`status-pill status-${snapshot.status}`}>
-          <span />
-          {statusLabel(snapshot.status)}
-        </span>
+        <div className="topbar-actions">
+          <Link className="ghost-action" href="/map">
+            Mapa
+          </Link>
+          <span className={`status-pill status-${snapshot.status}`}>
+            <span />
+            {statusLabel(snapshot.status)}
+          </span>
+        </div>
       </header>
 
       <section className="hero-panel">
@@ -133,6 +139,26 @@ export function RobotDashboard() {
           <span className="live-label">Última atividade</span>
           <strong>{lastLog}</strong>
           <p>{statusDescription(snapshot.status)}</p>
+        </aside>
+      </section>
+
+      <section className="map-cta">
+        <div className="map-cta-content">
+          <p className="eyebrow">Geovisualização</p>
+          <h2>Acesse o mapa de acidentes</h2>
+          <p>
+            Explore a distribuição geográfica das Comunicações de Acidente de Trabalho
+            e cruze o que o robô importou com o território brasileiro.
+          </p>
+          <Link className="primary-action map-cta-action" href="/map">
+            Acessar mapa
+          </Link>
+        </div>
+        <aside className="map-cta-preview" aria-hidden="true">
+          <span className="map-pin map-pin-1" />
+          <span className="map-pin map-pin-2" />
+          <span className="map-pin map-pin-3" />
+          <span className="map-pin map-pin-4" />
         </aside>
       </section>
 

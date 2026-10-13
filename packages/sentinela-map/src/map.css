@@ -202,8 +202,7 @@
   overflow: hidden;
 }
 
-.sentinela-rate-header,
-.sentinela-rate-chart {
+.sentinela-rate-header {
   padding: 0.95rem 0.95rem 0.35rem;
 }
 
@@ -306,99 +305,71 @@
   padding: 0.4rem 0.95rem 1rem;
 }
 
-.sentinela-rate-chart {
-  display: grid;
-  gap: 0.55rem;
-}
-
-.sentinela-rate-bar,
-.sentinela-rate-list button {
-  background: transparent;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-  width: 100%;
-}
-
-.sentinela-rate-bar-label {
-  align-items: baseline;
-  display: grid;
-  gap: 0.4rem;
-  grid-template-columns: 1.4rem minmax(0, 1fr) auto;
-}
-
-.sentinela-rate-bar-label span,
-.sentinela-rate-pos {
-  color: var(--muted, #94a3b8);
-  font-size: 0.72rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.sentinela-rate-bar-label strong {
-  font-size: 0.78rem;
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sentinela-rate-bar-label em {
-  color: #7dd3fc;
-  font-size: 0.75rem;
-  font-style: normal;
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-}
-
-.sentinela-rate-bar-track {
-  background: rgba(15, 23, 42, 0.95);
-  border-radius: 999px;
-  display: block;
-  height: 0.38rem;
-  margin-top: 0.28rem;
-  overflow: hidden;
-}
-
-.sentinela-rate-bar-fill {
-  background: linear-gradient(90deg, #0e7490, #38bdf8);
-  display: block;
-  height: 100%;
-}
-
 .sentinela-rate-list {
   display: grid;
+  align-content: start;
+  flex: 1;
   gap: 0.2rem;
   list-style: none;
-  margin: 0.35rem 0 0;
+  margin: 0.15rem 0 0;
+  min-height: 0;
   overflow: auto;
   padding: 0.2rem 0.55rem 0.8rem;
 }
 
 .sentinela-rate-list button {
   align-items: center;
+  background: rgba(15, 23, 42, 0.45);
+  border: 0;
   border-radius: 0.8rem;
+  color: inherit;
+  cursor: pointer;
   display: grid;
+  font: inherit;
   gap: 0.55rem;
   grid-template-columns: 1.5rem minmax(0, 1fr) auto;
-  padding: 0.45rem 0.4rem;
+  overflow: hidden;
+  padding: 0.5rem 0.55rem;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.sentinela-rate-pos {
+  color: var(--muted, #94a3b8);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+  z-index: 1;
+}
+
+.sentinela-rate-bar-fill {
+  background: linear-gradient(90deg, rgba(14, 116, 144, 0.55), rgba(56, 189, 248, 0.42));
+  bottom: 0;
+  left: 0;
+  position: absolute;
+  top: 0;
 }
 
 .sentinela-rate-list button:hover,
-.sentinela-rate-list button.is-active,
-.sentinela-rate-bar:hover .sentinela-rate-bar-label strong {
+.sentinela-rate-list button.is-active {
   color: #e0f2fe;
 }
 
 .sentinela-rate-list button.is-active,
 .sentinela-rate-list button:hover {
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(56, 189, 248, 0.16);
+}
+
+.sentinela-rate-list button.is-active {
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.45);
 }
 
 .sentinela-rate-copy,
 .sentinela-rate-value {
   display: grid;
+  position: relative;
+  z-index: 1;
 }
 
 .sentinela-rate-copy strong {

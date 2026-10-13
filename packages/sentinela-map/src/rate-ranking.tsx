@@ -32,8 +32,7 @@ export function RateRanking({ scopeLabel, loading, items, activeId, onSelect }: 
     }
     return right.rate - left.rate;
   });
-  const chart = ranked.filter((item) => item.rate != null).slice(0, 8);
-  const maxRate = chart[0]?.rate ?? 0;
+  const maxRate = ranked.find((item) => item.rate != null)?.rate ?? 0;
   const example =
     ranked.find((item) => item.id === activeId && item.rate != null && item.population > 0) ??
     ranked.find((item) => item.rate != null && item.population > 0);
@@ -83,54 +82,33 @@ export function RateRanking({ scopeLabel, loading, items, activeId, onSelect }: 
       ) : ranked.length === 0 ? (
         <p className="sentinela-rate-empty">Nenhuma localidade com taxa neste recorte.</p>
       ) : (
-        <>
-          <div className="sentinela-rate-chart">
-            {chart.map((item, index) => (
+        <ol className="sentinela-rate-list">
+          {ranked.map((item, index) => (
+            <li key={item.id}>
               <button
-                key={item.id}
-                className="sentinela-rate-bar"
+                className={item.id === activeId ? "is-active" : undefined}
                 type="button"
                 onClick={() => onSelect(item.id)}
               >
-                <span className="sentinela-rate-bar-label">
-                  <span>{String(index + 1).padStart(2, "0")}</span>
+                <span
+                  className="sentinela-rate-bar-fill"
+                  style={{ width: `${maxRate ? ((item.rate ?? 0) / maxRate) * 100 : 0}%` }}
+                />
+                <span className="sentinela-rate-pos">{String(index + 1).padStart(2, "0")}</span>
+                <span className="sentinela-rate-copy">
                   <strong>{item.name}</strong>
-                  <em>{formatRate(item.rate)}</em>
+                  <small>
+                    {formatCount(item.total)} CAT · {formatCount(item.population)} hab.
+                  </small>
                 </span>
-                <span className="sentinela-rate-bar-track">
-                  <span
-                    className="sentinela-rate-bar-fill"
-                    style={{ width: `${maxRate ? ((item.rate ?? 0) / maxRate) * 100 : 0}%` }}
-                  />
+                <span className="sentinela-rate-value">
+                  {formatRate(item.rate)}
+                  <small>{item.detail}</small>
                 </span>
               </button>
-            ))}
-          </div>
-
-          <ol className="sentinela-rate-list">
-            {ranked.map((item, index) => (
-              <li key={item.id}>
-                <button
-                  className={item.id === activeId ? "is-active" : undefined}
-                  type="button"
-                  onClick={() => onSelect(item.id)}
-                >
-                  <span className="sentinela-rate-pos">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="sentinela-rate-copy">
-                    <strong>{item.name}</strong>
-                    <small>
-                      {formatCount(item.total)} CAT · {formatCount(item.population)} hab.
-                    </small>
-                  </span>
-                  <span className="sentinela-rate-value">
-                    {formatRate(item.rate)}
-                    <small>{item.detail}</small>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ol>
-        </>
+            </li>
+          ))}
+        </ol>
       )}
     </aside>
   );

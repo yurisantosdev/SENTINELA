@@ -1,17 +1,27 @@
+from contextlib import asynccontextmanager
 from threading import Thread
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.cat_map import municipalities_for_uf, summarize_ufs, warmup_map_cache
 from app.config import get_settings
 from app.importer import CatImporter
 from app.job_state import job_state
-from app.models import JobSnapshot, StartJobRequest
+from app.models import CatMapSummary, JobSnapshot, MunicipalityMapResponse, StartJobRequest
 
 
 settings = get_settings()
 
-app = FastAPI(title="Sentinela API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    thread = Thread(target=warmup_map_cache, daemon=True, name="sentinela-map-warmup")
+    thread.start()
+    yield
+
+
+app = FastAPI(title="Sentinela API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -55,3 +65,32 @@ def start_job(payload: StartJobRequest) -> JobSnapshot:
     thread.start()
 
     return job_state.snapshot()
+
+
+@app.get("/api/cat/map/ufs", response_model=CatMapSummary)
+def get_cat_map_ufs() -> CatMapSummary:
+    try:
+        return CatMapSummary.model_validate(summarize_ufs())
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Não foi possível agregar as CATs no MongoDB.",
+        ) from exc
+
+
+@app.get("/api/cat/map/ufs/{sigla}/municipalities", response_model=MunicipalityMapResponse)
+def get_cat_map_municipalities(sigla: str) -> MunicipalityMapResponse:
+    try:
+        payload = municipalities_for_uf(sigla)
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="UF não encontrada.",
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Não foi possível agregar as CATs no MongoDB.",
+        ) from exc
+
+    return MunicipalityMapResponse.model_validate(payload)

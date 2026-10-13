@@ -18,7 +18,7 @@ export default function Map() {
       </header>
 
       <section className="card map-stage">
-        <MapPage />
+        <MapPage apiBaseUrl={process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"} />
       </section>
     </div>
   );

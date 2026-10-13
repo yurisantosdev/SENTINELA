@@ -107,16 +107,35 @@
   width: 0.7rem;
 }
 
-.sentinela-map-legend .leve {
+.sentinela-map-legend .leve,
+.sentinela-map-legend .tipico {
+  background: #38bdf8;
+}
+
+.sentinela-map-legend .grave,
+.sentinela-map-legend .trajeto {
   background: #fbbf24;
 }
 
-.sentinela-map-legend .grave {
-  background: #fb7185;
+.sentinela-map-legend .doenca {
+  background: #c084fc;
 }
 
 .sentinela-map-legend .obito {
   background: #f43f5e;
+}
+
+.sentinela-map-overlay {
+  align-items: center;
+  background: rgba(2, 6, 23, 0.55);
+  color: var(--text, #eff6ff);
+  display: flex;
+  font-weight: 800;
+  inset: 0;
+  justify-content: center;
+  pointer-events: none;
+  position: absolute;
+  z-index: 500;
 }
 
 .sentinela-map-tooltip {

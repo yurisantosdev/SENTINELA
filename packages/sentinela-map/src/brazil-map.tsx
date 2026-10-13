@@ -3,27 +3,15 @@
 import { useEffect, useMemo } from "react";
 import L from "leaflet";
 import { CircleMarker, GeoJSON, MapContainer, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
-import type { Occurrence, StateFeature, StateFeatureCollection } from "./types";
+import type { MapPoint, StateFeature, StateFeatureCollection } from "./types";
 import "leaflet/dist/leaflet.css";
 
 type BrazilMapProps = {
   geojson: StateFeatureCollection;
   selectedSigla: string | null;
-  occurrences: Occurrence[];
+  points: MapPoint[];
   countsByUf: Map<string, number>;
   onSelectState: (sigla: string) => void;
-};
-
-const severityColor: Record<Occurrence["severity"], string> = {
-  leve: "#fbbf24",
-  grave: "#fb7185",
-  obito: "#f43f5e",
-};
-
-const severityLabel: Record<Occurrence["severity"], string> = {
-  leve: "Leve",
-  grave: "Grave",
-  obito: "Óbito",
 };
 
 function OccurrencePane() {
@@ -62,10 +50,47 @@ function MapViewport({ geojson, selectedSigla }: { geojson: StateFeatureCollecti
   return null;
 }
 
+function formatCount(value: number) {
+  return new Intl.NumberFormat("pt-BR").format(value);
+}
+
+function pointColor(point: MapPoint) {
+  const deathRate = point.total ? point.deaths / point.total : 0;
+  if (deathRate >= 0.005 && point.deaths > 0) {
+    return "#f43f5e";
+  }
+  if (point.deaths > 0) {
+    return "#fb7185";
+  }
+  if (point.commute >= point.typical && point.commute >= point.disease) {
+    return "#fbbf24";
+  }
+  if (point.disease >= point.typical) {
+    return "#c084fc";
+  }
+  return "#38bdf8";
+}
+
+function pointRadius(total: number, selected: boolean) {
+  const scaled = 3 + Math.log10(Math.max(total, 1)) * (selected ? 2.2 : 1.7);
+  return Math.max(selected ? 3.5 : 3, Math.min(selected ? 10 : 8, scaled));
+}
+
+function choroplethColor(count: number, max: number) {
+  if (!count || !max) {
+    return "#0f172a";
+  }
+  const t = Math.max(0.18, Math.log1p(count) / Math.log1p(max));
+  const r = Math.round(8 + 48 * t);
+  const g = Math.round(47 + 142 * t);
+  const b = Math.round(73 + 175 * t);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 export function BrazilMap({
   geojson,
   selectedSigla,
-  occurrences,
+  points,
   countsByUf,
   onSelectState,
 }: BrazilMapProps) {
@@ -80,6 +105,8 @@ export function BrazilMap({
     };
   }, [geojson, selectedSigla]);
 
+  const maxCount = useMemo(() => Math.max(0, ...countsByUf.values()), [countsByUf]);
+
   function styleFeature(feature?: StateFeature) {
     const count = countsByUf.get(feature?.properties.sigla ?? "") ?? 0;
     const isSelected = Boolean(selectedSigla);
@@ -88,8 +115,8 @@ export function BrazilMap({
       color: isSelected ? "#7dd3fc" : "#38bdf8",
       weight: isSelected ? 2 : 1,
       opacity: 0.95,
-      fillColor: count === 0 ? "#0f3a52" : count < 2 ? "#075985" : count < 4 ? "#0284c7" : "#38bdf8",
-      fillOpacity: isSelected ? 0.16 : count === 0 ? 0.18 : 0.32,
+      fillColor: choroplethColor(count, maxCount),
+      fillOpacity: isSelected ? 0.14 : count === 0 ? 0.16 : 0.42,
     };
   }
 
@@ -118,7 +145,7 @@ export function BrazilMap({
           const state = (feature as StateFeature).properties;
           const count = countsByUf.get(state.sigla) ?? 0;
 
-          layer.bindTooltip(`${state.nome} · ${state.sigla} · ${count} ocorrência${count === 1 ? "" : "s"}`, {
+          layer.bindTooltip(`${state.nome} · ${state.sigla} · ${formatCount(count)} CAT`, {
             sticky: true,
             className: "sentinela-map-tooltip",
             opacity: 1,
@@ -145,30 +172,33 @@ export function BrazilMap({
           });
         }}
       />
-      {occurrences.map((occurrence) => (
+      {points.map((point) => (
         <CircleMarker
-          key={occurrence.id}
+          key={point.id}
           pane="occurrences"
-          center={[occurrence.lat, occurrence.lng]}
-          radius={selectedSigla ? 9 : 7}
+          center={[point.lat, point.lng]}
+          radius={pointRadius(point.total, Boolean(selectedSigla))}
           pathOptions={{
             color: "#020617",
             weight: 1.5,
-            fillColor: severityColor[occurrence.severity],
-            fillOpacity: 0.95,
+            fillColor: pointColor(point),
+            fillOpacity: 0.9,
+          }}
+          eventHandlers={{
+            click: (event) => event.originalEvent.stopPropagation(),
           }}
         >
           <Tooltip className="sentinela-map-tooltip" direction="top">
-            {occurrence.city}
+            {point.name} · {formatCount(point.total)}
           </Tooltip>
           <Popup className="sentinela-map-popup">
             <strong>
-              {occurrence.city} · {occurrence.uf}
+              {point.name} · {point.uf}
             </strong>
-            <p>{occurrence.description}</p>
+            <p>{formatCount(point.total)} comunicações CAT neste ponto.</p>
             <small>
-              {new Intl.DateTimeFormat("pt-BR").format(new Date(`${occurrence.date}T00:00:00`))} ·{" "}
-              {severityLabel[occurrence.severity]}
+              Óbitos {formatCount(point.deaths)} · Típico {formatCount(point.typical)} · Trajeto{" "}
+              {formatCount(point.commute)} · Doença {formatCount(point.disease)}
             </small>
           </Popup>
         </CircleMarker>

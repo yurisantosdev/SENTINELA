@@ -2,10 +2,11 @@
 
 import { ArrowLeft } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BRAZIL_STATES_BY_SIGLA } from "./brazil-states";
-import { TEST_OCCURRENCES } from "./test-occurrences";
 import { useBrazilGeo } from "./use-brazil-geo";
+import { useCatMapData } from "./use-cat-map";
+import type { MapPoint } from "./types";
 import "./map.css";
 import "leaflet/dist/leaflet.css";
 
@@ -14,27 +15,72 @@ const BrazilMap = dynamic(() => import("./brazil-map").then((module) => module.B
   loading: () => <div className="sentinela-map-status">Carregando mapa do Brasil…</div>,
 });
 
-export function MapPage() {
-  const { data, error, source } = useBrazilGeo();
+type MapPageProps = {
+  apiBaseUrl?: string;
+};
+
+function formatCount(value: number) {
+  return new Intl.NumberFormat("pt-BR").format(value);
+}
+
+export function MapPage({ apiBaseUrl }: MapPageProps) {
+  const { data, error: geoError, source } = useBrazilGeo();
+  const {
+    summary,
+    municipalities,
+    unlocated,
+    loadingSummary,
+    loadingMunicipalities,
+    error: catError,
+    loadMunicipalities,
+  } = useCatMapData(apiBaseUrl);
   const [selectedSigla, setSelectedSigla] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadMunicipalities(selectedSigla).catch(() => undefined);
+  }, [loadMunicipalities, selectedSigla]);
 
   const countsByUf = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const occurrence of TEST_OCCURRENCES) {
-      counts.set(occurrence.uf, (counts.get(occurrence.uf) ?? 0) + 1);
+    for (const uf of summary?.ufs ?? []) {
+      counts.set(uf.sigla, uf.total);
     }
     return counts;
-  }, []);
+  }, [summary]);
+
+  const points = useMemo<MapPoint[]>(() => {
+    if (selectedSigla) {
+      return municipalities.map((point) => ({
+        ...point,
+        kind: "municipality" as const,
+      }));
+    }
+
+    return (summary?.ufs ?? [])
+      .filter((uf) => uf.total > 0)
+      .map((uf) => ({
+        id: uf.sigla,
+        uf: uf.sigla,
+        name: uf.nome,
+        lat: uf.lat,
+        lng: uf.lng,
+        total: uf.total,
+        deaths: uf.deaths,
+        typical: uf.typical,
+        commute: uf.commute,
+        disease: uf.disease,
+        kind: "uf" as const,
+      }));
+  }, [municipalities, selectedSigla, summary]);
 
   const selectedState = selectedSigla ? BRAZIL_STATES_BY_SIGLA.get(selectedSigla) : null;
-  const visibleOccurrences = selectedSigla
-    ? TEST_OCCURRENCES.filter((occurrence) => occurrence.uf === selectedSigla)
-    : TEST_OCCURRENCES;
-
+  const selectedTotal = selectedSigla ? (countsByUf.get(selectedSigla) ?? 0) : (summary?.total ?? 0);
   const title = selectedState ? selectedState.nome : "Brasil";
   const subtitle = selectedState
-    ? `${selectedState.sigla} · ${visibleOccurrences.length} ocorrência${visibleOccurrences.length === 1 ? "" : "s"} de teste`
-    : "Passe o mouse para destacar um estado. Clique para abrir o mapa ampliado.";
+    ? `${selectedState.sigla} · ${formatCount(selectedTotal)} CAT no município do empregador`
+    : summary
+      ? `${formatCount(summary.total)} comunicações CAT · clique em um estado para ver os municípios`
+      : "Carregando agregação das comunicações CAT…";
 
   return (
     <section className="sentinela-map-shell">
@@ -53,29 +99,50 @@ export function MapPage() {
       </header>
 
       <div className="sentinela-map-canvas">
-        <BrazilMap
-          geojson={data}
-          selectedSigla={selectedSigla}
-          occurrences={visibleOccurrences}
-          countsByUf={countsByUf}
-          onSelectState={setSelectedSigla}
-        />
+        {loadingSummary ? (
+          <div className="sentinela-map-status">
+            Agregando as comunicações CAT do MongoDB. A primeira carga pode levar cerca de um minuto…
+          </div>
+        ) : catError && !summary ? (
+          <div className="sentinela-map-status">{catError}</div>
+        ) : data ? (
+          <>
+            <BrazilMap
+              geojson={data}
+              selectedSigla={selectedSigla}
+              points={points}
+              countsByUf={countsByUf}
+              onSelectState={setSelectedSigla}
+            />
+            {loadingMunicipalities ? (
+              <div className="sentinela-map-overlay">Carregando municípios…</div>
+            ) : null}
+          </>
+        ) : (
+          <div className="sentinela-map-status">Não foi possível montar o mapa do Brasil.</div>
+        )}
       </div>
 
       <footer className="sentinela-map-legend">
         <span>
-          <i className="leve" /> Leve
+          <i className="tipico" /> Típico
         </span>
         <span>
-          <i className="grave" /> Grave
+          <i className="trajeto" /> Trajeto
+        </span>
+        <span>
+          <i className="doenca" /> Doença
         </span>
         <span>
           <i className="obito" /> Óbito
         </span>
         <span>
-          {visibleOccurrences.length} ponto{visibleOccurrences.length === 1 ? "" : "s"} de teste
+          {selectedSigla
+            ? `${formatCount(points.length)} municípios · ${formatCount(unlocated)} sem coordenada`
+            : `${formatCount(points.length)} UFs`}
+          {summary ? ` · ${formatCount(summary.deaths)} óbitos` : ""}
           {source === "ibge" ? " · malha IBGE" : source === "local" ? " · malha local" : ""}
-          {error && source === "local" ? " (IBGE indisponível)" : ""}
+          {geoError && source === "local" ? " (IBGE indisponível)" : ""}
         </span>
       </footer>
     </section>

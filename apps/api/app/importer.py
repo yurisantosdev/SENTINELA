@@ -72,6 +72,8 @@ class CatImporter:
         collection.create_index("row_hash", unique=True)
         collection.create_index("resource.id")
         collection.create_index("imported_at")
+        collection.create_index("dados.UF Munic_ Empregador")
+        collection.create_index("dados.Munic Empr")
 
     def _import_resource(
         self,

@@ -36,9 +36,12 @@ export function useCatMapData(apiBaseUrl = defaultApiBaseUrl) {
       if (!sigla) {
         setMunicipalities([]);
         setUnlocated(0);
+        setLoadingMunicipalities(false);
         return;
       }
 
+      setMunicipalities([]);
+      setUnlocated(0);
       setLoadingMunicipalities(true);
       try {
         const response = await fetch(`${apiBaseUrl}/api/cat/map/ufs/${sigla}/municipalities`, {

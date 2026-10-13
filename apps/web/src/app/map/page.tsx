@@ -3,7 +3,7 @@ import { MapPage } from "@sentinela/map";
 
 export default function Map() {
   return (
-    <div className="dashboard-shell">
+    <div className="dashboard-shell map-wide">
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">S</span>

@@ -46,6 +46,10 @@ textarea {
   padding: 2rem 1.25rem 3rem;
 }
 
+.dashboard-shell.map-wide {
+  max-width: 1440px;
+}
+
 .topbar,
 .hero-panel,
 .workspace-grid,

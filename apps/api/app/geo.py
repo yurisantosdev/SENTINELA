@@ -8,6 +8,8 @@ from functools import lru_cache
 from pathlib import Path
 
 MUNICIPIOS_PATH = Path(__file__).parent / "data" / "municipios.json"
+# Estimativas populacionais municipais do IBGE 2024 (agregado 6579, variável 9324).
+POPULATION_PATH = Path(__file__).parent / "data" / "populacao.json"
 MUNIC_RE = re.compile(r"^\s*(\d{6,7})\s*-?\s*(.*?)\s*$")
 
 STATE_CENTROIDS: dict[str, tuple[float, float]] = {
@@ -140,6 +142,28 @@ def municipality_indexes() -> tuple[dict[str, Municipality], dict[str, Municipal
         by_prefix.setdefault(prefix, municipality)
 
     return by_code, by_prefix
+
+
+@lru_cache
+def population_by_ibge() -> dict[str, int]:
+    payload = json.loads(POPULATION_PATH.read_text(encoding="utf-8"))
+    return {str(code).zfill(7): int(value) for code, value in payload.items()}
+
+
+@lru_cache
+def population_by_uf() -> dict[str, int]:
+    totals = {sigla: 0 for sigla in STATE_META}
+    populations = population_by_ibge()
+    by_code, _ = municipality_indexes()
+    for code, municipality in by_code.items():
+        if not municipality.sigla:
+            continue
+        totals[municipality.sigla] += populations.get(str(code).zfill(7), 0)
+    return totals
+
+
+def population_for_ibge(code: str) -> int:
+    return population_by_ibge().get(str(code).zfill(7), 0)
 
 
 def lookup_municipality(raw_value: str | None) -> Municipality | None:

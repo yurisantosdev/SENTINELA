@@ -58,12 +58,19 @@
   border-color: rgba(56, 189, 248, 0.42);
 }
 
+.sentinela-map-body {
+  display: grid;
+  flex: 1;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr) 22.5rem;
+  min-height: 36rem;
+}
+
 .sentinela-map-canvas {
   background: rgba(2, 6, 23, 0.55);
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 1.25rem;
-  flex: 1;
-  height: 36rem;
+  min-height: 36rem;
   overflow: hidden;
   position: relative;
 }
@@ -100,29 +107,22 @@
   gap: 0.4rem;
 }
 
-.sentinela-map-legend i {
+.sentinela-map-legend i,
+.sentinela-rate-key i,
+.sentinela-rate-key b {
   border-radius: 999px;
   display: inline-block;
-  height: 0.7rem;
-  width: 0.7rem;
+  height: 0.55rem;
 }
 
-.sentinela-map-legend .leve,
-.sentinela-map-legend .tipico {
+.sentinela-rate-key i {
+  background: #0f2744;
+  width: 2.4rem;
+}
+
+.sentinela-rate-key b {
   background: #38bdf8;
-}
-
-.sentinela-map-legend .grave,
-.sentinela-map-legend .trajeto {
-  background: #fbbf24;
-}
-
-.sentinela-map-legend .doenca {
-  background: #c084fc;
-}
-
-.sentinela-map-legend .obito {
-  background: #f43f5e;
+  width: 2.4rem;
 }
 
 .sentinela-map-overlay {
@@ -191,12 +191,177 @@
   cursor: pointer;
 }
 
+.sentinela-rate-panel {
+  background: rgba(2, 6, 23, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  max-height: 36rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sentinela-rate-header,
+.sentinela-rate-chart {
+  padding: 0.95rem 0.95rem 0.35rem;
+}
+
+.sentinela-rate-header h3 {
+  font-size: 1rem;
+  margin: 0.2rem 0 0;
+}
+
+.sentinela-rate-header p,
+.sentinela-rate-empty {
+  color: var(--muted, #94a3b8);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0.35rem 0 0;
+}
+
+.sentinela-rate-empty {
+  padding: 0.4rem 0.95rem 1rem;
+}
+
+.sentinela-rate-chart {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.sentinela-rate-bar,
+.sentinela-rate-list button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.sentinela-rate-bar-label {
+  align-items: baseline;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+}
+
+.sentinela-rate-bar-label span,
+.sentinela-rate-pos {
+  color: var(--muted, #94a3b8);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sentinela-rate-bar-label strong {
+  font-size: 0.78rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sentinela-rate-bar-label em {
+  color: #7dd3fc;
+  font-size: 0.75rem;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.sentinela-rate-bar-track {
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 999px;
+  display: block;
+  height: 0.38rem;
+  margin-top: 0.28rem;
+  overflow: hidden;
+}
+
+.sentinela-rate-bar-fill {
+  background: linear-gradient(90deg, #0e7490, #38bdf8);
+  display: block;
+  height: 100%;
+}
+
+.sentinela-rate-list {
+  display: grid;
+  gap: 0.2rem;
+  list-style: none;
+  margin: 0.35rem 0 0;
+  overflow: auto;
+  padding: 0.2rem 0.55rem 0.8rem;
+}
+
+.sentinela-rate-list button {
+  align-items: center;
+  border-radius: 0.8rem;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  padding: 0.45rem 0.4rem;
+}
+
+.sentinela-rate-list button:hover,
+.sentinela-rate-list button.is-active,
+.sentinela-rate-bar:hover .sentinela-rate-bar-label strong {
+  color: #e0f2fe;
+}
+
+.sentinela-rate-list button.is-active,
+.sentinela-rate-list button:hover {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.sentinela-rate-copy,
+.sentinela-rate-value {
+  display: grid;
+}
+
+.sentinela-rate-copy strong {
+  font-size: 0.84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sentinela-rate-copy small,
+.sentinela-rate-value small {
+  color: var(--muted, #94a3b8);
+  font-size: 0.72rem;
+}
+
+.sentinela-rate-value {
+  color: #7dd3fc;
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-align: right;
+}
+
+@media (max-width: 980px) {
+  .sentinela-map-body {
+    grid-template-columns: 1fr;
+  }
+
+  .sentinela-map-canvas,
+  .sentinela-rate-panel {
+    max-height: none;
+    min-height: 28rem;
+  }
+
+  .sentinela-rate-list {
+    max-height: 18rem;
+  }
+}
+
 @media (max-width: 720px) {
   .sentinela-map-header {
     flex-direction: column;
   }
 
   .sentinela-map-canvas {
-    height: 28rem;
+    min-height: 24rem;
   }
 }

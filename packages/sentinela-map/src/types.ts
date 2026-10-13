@@ -20,6 +20,8 @@ export type CatMetrics = {
   typical: number;
   commute: number;
   disease: number;
+  population: number;
+  rate: number | null;
 };
 
 export type UfMapStat = CatMetrics & {

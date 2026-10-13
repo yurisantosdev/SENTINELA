@@ -7,7 +7,15 @@ from typing import Any
 from pymongo.collection import Collection
 
 from app.db import get_cat_collection
-from app.geo import STATE_CENTROIDS, STATE_META, lookup_municipality, parse_munic_label, sigla_from_uf_name
+from app.geo import (
+    STATE_CENTROIDS,
+    STATE_META,
+    lookup_municipality,
+    parse_munic_label,
+    population_by_uf,
+    population_for_ibge,
+    sigla_from_uf_name,
+)
 
 FIELD_UF_EMPLOYER = "UF Munic_ Empregador"
 FIELD_MUNICIPALITY = "Munic Empr"
@@ -80,6 +88,24 @@ def _empty_metrics() -> dict[str, int]:
     return {"total": 0, "deaths": 0, "typical": 0, "commute": 0, "disease": 0}
 
 
+def rate_per_100k(total: int, population: int) -> float | None:
+    if population <= 0:
+        return None
+    return round(total * 100_000 / population, 1)
+
+
+def _with_rate(metrics: dict[str, int], population: int) -> dict[str, Any]:
+    return {
+        **metrics,
+        "population": population,
+        "rate": rate_per_100k(metrics["total"], population),
+    }
+
+
+def _sort_by_rate(items: list[dict[str, Any]]) -> None:
+    items.sort(key=lambda item: (item.get("rate") is not None, item.get("rate") or 0), reverse=True)
+
+
 def _add_metrics(target: dict[str, int], source: dict[str, Any]) -> None:
     for key in target:
         target[key] += int(source.get(key) or 0)
@@ -118,6 +144,7 @@ def summarize_ufs() -> dict[str, Any]:
         _uf_raw_values.clear()
         _uf_raw_values.update(raw_values)
 
+    populations = population_by_uf()
     ufs = []
     for sigla, meta in STATE_META.items():
         metrics = by_sigla[sigla]
@@ -128,18 +155,24 @@ def summarize_ufs() -> dict[str, Any]:
                 "nome": meta["nome"],
                 "lat": lat,
                 "lng": lng,
-                **metrics,
+                **_with_rate(metrics, populations.get(sigla, 0)),
             }
         )
 
-    ufs.sort(key=lambda item: item["total"], reverse=True)
+    _sort_by_rate(ufs)
     located_total = sum(item["total"] for item in ufs)
+    population = sum(populations.values())
     payload = {
-        "total": located_total + unknown["total"],
-        "deaths": sum(item["deaths"] for item in ufs) + unknown["deaths"],
-        "typical": sum(item["typical"] for item in ufs) + unknown["typical"],
-        "commute": sum(item["commute"] for item in ufs) + unknown["commute"],
-        "disease": sum(item["disease"] for item in ufs) + unknown["disease"],
+        **_with_rate(
+            {
+                "total": located_total + unknown["total"],
+                "deaths": sum(item["deaths"] for item in ufs) + unknown["deaths"],
+                "typical": sum(item["typical"] for item in ufs) + unknown["typical"],
+                "commute": sum(item["commute"] for item in ufs) + unknown["commute"],
+                "disease": sum(item["disease"] for item in ufs) + unknown["disease"],
+            },
+            population,
+        ),
         "unknown": unknown["total"],
         "ufs": ufs,
     }
@@ -174,8 +207,7 @@ def municipalities_for_uf(sigla: str) -> dict[str, Any]:
                 {
                     "$group": {
                         "_id": f"$dados.{FIELD_MUNICIPALITY}",
-                        "total": {"$sum": 1},
-                        "deaths": _count_if_prefix(FIELD_DEATH, "Sim"),
+                        **GROUP_METRICS,
                     }
                 },
             ],
@@ -191,6 +223,13 @@ def municipalities_for_uf(sigla: str) -> dict[str, Any]:
             _add_metrics(unlocated, row)
             continue
 
+        metrics = {
+            "total": int(row.get("total") or 0),
+            "deaths": int(row.get("deaths") or 0),
+            "typical": int(row.get("typical") or 0),
+            "commute": int(row.get("commute") or 0),
+            "disease": int(row.get("disease") or 0),
+        }
         points.append(
             {
                 "id": municipality.ibge,
@@ -199,15 +238,11 @@ def municipalities_for_uf(sigla: str) -> dict[str, Any]:
                 "uf": code,
                 "lat": municipality.lat,
                 "lng": municipality.lng,
-                "total": int(row.get("total") or 0),
-                "deaths": int(row.get("deaths") or 0),
-                "typical": int(row.get("typical") or 0),
-                "commute": int(row.get("commute") or 0),
-                "disease": int(row.get("disease") or 0),
+                **_with_rate(metrics, population_for_ibge(municipality.ibge)),
             }
         )
 
-    points.sort(key=lambda item: item["total"], reverse=True)
+    _sort_by_rate(points)
     payload = {
         "uf": code,
         "nome": STATE_META[code]["nome"],

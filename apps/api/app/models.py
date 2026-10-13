@@ -41,6 +41,8 @@ class MapMetrics(BaseModel):
     typical: int = 0
     commute: int = 0
     disease: int = 0
+    population: int = 0
+    rate: Optional[float] = None
 
 
 class UfMapStat(MapMetrics):

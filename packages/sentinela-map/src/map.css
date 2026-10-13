@@ -220,6 +220,88 @@
   margin: 0.35rem 0 0;
 }
 
+.sentinela-rate-formula {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 0.95rem;
+  margin: 0.15rem 0.75rem 0.35rem;
+  padding: 0.7rem 0.75rem 0.62rem;
+}
+
+.sentinela-rate-formula-kicker,
+.sentinela-rate-formula-note,
+.sentinela-rate-fraction small,
+.sentinela-rate-factor small,
+.sentinela-rate-result-chip small {
+  color: var(--muted, #94a3b8);
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.sentinela-rate-formula-kicker,
+.sentinela-rate-formula-place,
+.sentinela-rate-formula-note {
+  margin: 0;
+}
+
+.sentinela-rate-formula-kicker {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sentinela-rate-formula-place {
+  font-size: 0.92rem;
+  font-weight: 800;
+  margin-top: 0.15rem;
+}
+
+.sentinela-rate-formula-eq {
+  align-items: center;
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: minmax(0, 1.15fr) auto minmax(0, 0.85fr) auto minmax(0, 0.95fr);
+  margin-top: 0.55rem;
+}
+
+.sentinela-rate-fraction,
+.sentinela-rate-factor,
+.sentinela-rate-result-chip {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.sentinela-rate-fraction strong,
+.sentinela-rate-factor strong,
+.sentinela-rate-result-chip strong {
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+.sentinela-rate-fraction-line {
+  background: rgba(226, 232, 240, 0.72);
+  height: 1px;
+  margin: 0.22rem 0;
+  width: 100%;
+}
+
+.sentinela-rate-op {
+  color: #e2e8f0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.sentinela-rate-result-chip strong {
+  color: #7dd3fc;
+  font-size: 1.02rem;
+}
+
+.sentinela-rate-formula-note {
+  margin-top: 0.5rem;
+}
+
 .sentinela-rate-empty {
   padding: 0.4rem 0.95rem 1rem;
 }

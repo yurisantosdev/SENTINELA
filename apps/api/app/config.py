@@ -14,8 +14,7 @@ class Settings(BaseSettings):
     mongo_database: Annotated[str, Field(alias="MONGO_DATABASE")] = "sentinela"
     mongo_collection: Annotated[str, Field(alias="MONGO_COLLECTION")] = "cat_comunicacoes"
     sentinela_dataset_url: Annotated[str, Field(alias="SENTINELA_DATASET_URL")] = (
-        "https://dadosabertos.inss.gov.br/pt_BR/dataset/"
-        "comunicacoes-de-acidente-de-trabalho-cat-plano-de-dados-abertos-jun-2023-a-jun-2025"
+        "https://dadosabertos.inss.gov.br/pt_BR/dataset/comunicacoes-de-acidente-de-trabalho-cat-plano-de-dados-abertos-jun-2023-a-dez-2027"
     )
     sentinela_tag: Annotated[str, Field(alias="SENTINELA_TAG")] = ""
     allowed_origins: Annotated[str, Field(alias="ALLOWED_ORIGINS")] = "http://localhost:3000"

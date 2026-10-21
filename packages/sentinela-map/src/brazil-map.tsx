@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import L from "leaflet";
 import { CircleMarker, GeoJSON, MapContainer, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { regionColor, regionOf } from "./brazil-states";
 import { formatCount, formatRate } from "./format";
 import type { MapPoint, StateFeature, StateFeatureCollection } from "./types";
 import "leaflet/dist/leaflet.css";
@@ -10,6 +11,7 @@ import "leaflet/dist/leaflet.css";
 type BrazilMapProps = {
   geojson: StateFeatureCollection;
   selectedSigla: string | null;
+  selectedRegion: string | null;
   points: MapPoint[];
   ratesByUf: Map<string, number>;
   highlightedId: string | null;
@@ -29,7 +31,13 @@ function OccurrencePane() {
   return null;
 }
 
-function MapViewport({ geojson, selectedSigla }: { geojson: StateFeatureCollection; selectedSigla: string | null }) {
+function MapViewport({
+  geojson,
+  focus,
+}: {
+  geojson: StateFeatureCollection;
+  focus: "country" | "region" | "state";
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -42,25 +50,51 @@ function MapViewport({ geojson, selectedSigla }: { geojson: StateFeatureCollecti
     map.fitBounds(bounds, {
       animate: true,
       padding: [28, 28],
-      maxZoom: selectedSigla ? 10 : 5,
+      maxZoom: focus === "state" ? 10 : focus === "region" ? 6 : 5,
     });
-    map.setMaxBounds(bounds.pad(selectedSigla ? 0.45 : 0.22));
+    map.setMaxBounds(bounds.pad(focus === "country" ? 0.22 : 0.45));
     const timeoutId = window.setTimeout(() => map.invalidateSize(), 80);
     return () => window.clearTimeout(timeoutId);
-  }, [geojson, map, selectedSigla]);
+  }, [focus, geojson, map]);
 
   return null;
 }
 
-function choroplethColor(value: number, max: number) {
-  if (!value || !max) {
-    return "#0f172a";
-  }
-  const t = Math.max(0.12, Math.min(1, value / max));
-  const r = Math.round(8 + 48 * t);
-  const g = Math.round(47 + 142 * t);
-  const b = Math.round(73 + 175 * t);
-  return `rgb(${r}, ${g}, ${b})`;
+const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const LIGHT_TILES = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+
+function useMapTheme() {
+  const [theme, setTheme] = useState<"dark" | "light">(() =>
+    typeof document !== "undefined" && document.documentElement.dataset.theme === "light" ? "light" : "dark",
+  );
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const read = () => setTheme(root.dataset.theme === "light" ? "light" : "dark");
+    read();
+    const observer = new MutationObserver(read);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
+  return theme;
+}
+
+function hexToRgb(hex: string) {
+  const value = hex.replace("#", "");
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16),
+  };
+}
+
+function regionFill(region: string, value: number, max: number, theme: "dark" | "light") {
+  const { r, g, b } = hexToRgb(regionColor(region));
+  const amount = !value || !max ? 0 : Math.pow(Math.max(0, Math.min(1, value / max)), 0.72);
+  const mix = theme === "light" ? 0.28 + 0.72 * amount : 0.42 + 0.58 * amount;
+  const target = theme === "light" ? 255 : 0;
+  return `rgb(${Math.round(r * mix + target * (1 - mix))}, ${Math.round(g * mix + target * (1 - mix))}, ${Math.round(b * mix + target * (1 - mix))})`;
 }
 
 function pointRadius(rate: number, max: number, selected: boolean) {
@@ -88,21 +122,26 @@ function FocusPoint({ point }: { point: MapPoint | null }) {
 export function BrazilMap({
   geojson,
   selectedSigla,
+  selectedRegion,
   points,
   ratesByUf,
   highlightedId,
   onSelectState,
 }: BrazilMapProps) {
   const displayedGeoJson = useMemo(() => {
-    if (!selectedSigla) {
-      return geojson;
-    }
-
     return {
       type: "FeatureCollection" as const,
-      features: geojson.features.filter((feature) => feature.properties.sigla === selectedSigla),
+      features: geojson.features.filter((feature) => {
+        if (selectedSigla) {
+          return feature.properties.sigla === selectedSigla;
+        }
+        if (selectedRegion) {
+          return feature.properties.regiao === selectedRegion;
+        }
+        return true;
+      }),
     };
-  }, [geojson, selectedSigla]);
+  }, [geojson, selectedRegion, selectedSigla]);
 
   const maxRate = useMemo(() => Math.max(0, ...ratesByUf.values()), [ratesByUf]);
   const maxPointRate = useMemo(
@@ -110,17 +149,19 @@ export function BrazilMap({
     [points],
   );
   const highlightedPoint = points.find((point) => point.id === highlightedId) ?? null;
+  const theme = useMapTheme();
+  const focus = selectedSigla ? "state" : selectedRegion ? "region" : "country";
 
   function styleFeature(feature?: StateFeature) {
-    const rate = ratesByUf.get(feature?.properties.sigla ?? "") ?? 0;
-    const isSelected = Boolean(selectedSigla);
+    const sigla = feature?.properties.sigla ?? "";
+    const rate = ratesByUf.get(sigla) ?? 0;
 
     return {
-      color: isSelected ? "#7dd3fc" : "#38bdf8",
-      weight: isSelected ? 2 : 1,
-      opacity: 0.95,
-      fillColor: choroplethColor(rate, maxRate),
-      fillOpacity: isSelected ? 0.14 : rate === 0 ? 0.16 : 0.42,
+      color: theme === "light" ? "#18181b" : "#fafafa",
+      weight: selectedSigla ? 2 : 1.25,
+      opacity: 1,
+      fillColor: regionFill(feature?.properties.regiao ?? regionOf(sigla) ?? "", rate, maxRate, theme),
+      fillOpacity: selectedSigla ? 0.28 : rate === 0 ? 0.55 : 0.92,
     };
   }
 
@@ -136,21 +177,22 @@ export function BrazilMap({
       attributionControl={false}
     >
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        key={theme}
+        url={theme === "light" ? LIGHT_TILES : DARK_TILES}
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CARTO'
       />
       <OccurrencePane />
-      <MapViewport geojson={displayedGeoJson} selectedSigla={selectedSigla} />
+      <MapViewport geojson={displayedGeoJson} focus={focus} />
       <FocusPoint point={highlightedPoint?.kind === "municipality" ? highlightedPoint : null} />
       <GeoJSON
-        key={selectedSigla ?? "br"}
+        key={`${selectedSigla ?? selectedRegion ?? "br"}-${theme}`}
         data={displayedGeoJson}
         style={(feature) => styleFeature(feature as StateFeature)}
         onEachFeature={(feature, layer) => {
           const state = (feature as StateFeature).properties;
           const rate = ratesByUf.get(state.sigla) ?? 0;
 
-          layer.bindTooltip(`${state.nome} · ${formatRate(rate)} por 100 mil hab.`, {
+          layer.bindTooltip(`${state.nome} · ${state.regiao} · ${formatRate(rate)} por 100 mil hab.`, {
             sticky: true,
             className: "sentinela-map-tooltip",
             opacity: 1,
@@ -160,9 +202,9 @@ export function BrazilMap({
             mouseover: (event) => {
               event.target.setStyle({
                 weight: 2.5,
-                fillOpacity: 0.55,
-                fillColor: "#38bdf8",
-                color: "#e0f2fe",
+                fillOpacity: selectedSigla ? 0.4 : 1,
+                fillColor: regionFill(state.regiao, rate, maxRate, theme),
+                color: theme === "light" ? "#000" : "#fff",
               });
               event.target.bringToFront();
             },
@@ -186,10 +228,10 @@ export function BrazilMap({
             center={[point.lat, point.lng]}
             radius={pointRadius(point.rate ?? 0, maxPointRate, Boolean(selectedSigla)) + (highlighted ? 2 : 0)}
             pathOptions={{
-              color: highlighted ? "#e0f2fe" : "#020617",
-              weight: highlighted ? 2.5 : 1.5,
-              fillColor: choroplethColor(point.rate ?? 0, maxPointRate),
-              fillOpacity: 0.92,
+              color: theme === "light" ? "#18181b" : "#fafafa",
+              weight: highlighted ? 2.5 : 1.25,
+              fillColor: regionFill(regionOf(point.uf) ?? "", point.rate ?? 0, maxPointRate, theme),
+              fillOpacity: 0.95,
             }}
             eventHandlers={{
               click: (event) => event.originalEvent.stopPropagation(),

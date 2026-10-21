@@ -3,12 +3,12 @@
 import { ArrowLeft } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import { BRAZIL_STATES_BY_SIGLA } from "./brazil-states";
+import { BRAZIL_REGIONS, BRAZIL_STATES_BY_SIGLA, regionOf, type BrazilRegionId } from "./brazil-states";
 import { formatCount, formatRate } from "./format";
 import { RateRanking, type RankingItem } from "./rate-ranking";
 import { useBrazilGeo } from "./use-brazil-geo";
 import { useCatMapData } from "./use-cat-map";
-import type { MapPoint } from "./types";
+import type { MapPoint, UfMapStat } from "./types";
 import "./map.css";
 import "leaflet/dist/leaflet.css";
 
@@ -20,6 +20,14 @@ const BrazilMap = dynamic(() => import("./brazil-map").then((module) => module.B
 type MapPageProps = {
   apiBaseUrl?: string;
 };
+
+function regionSnapshot(ufs: UfMapStat[]) {
+  const total = ufs.reduce((sum, uf) => sum + uf.total, 0);
+  const population = ufs.reduce((sum, uf) => sum + uf.population, 0);
+  const deaths = ufs.reduce((sum, uf) => sum + uf.deaths, 0);
+  const rate = population > 0 ? Math.round((total * 100_000) / population * 10) / 10 : null;
+  return { total, population, deaths, rate };
+}
 
 export function MapPage({ apiBaseUrl }: MapPageProps) {
   const { data, error: geoError, source } = useBrazilGeo();
@@ -33,6 +41,7 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
     loadMunicipalities,
   } = useCatMapData(apiBaseUrl);
   const [selectedSigla, setSelectedSigla] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<BrazilRegionId | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   const ratesByUf = useMemo(() => {
@@ -52,7 +61,7 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
     }
 
     return (summary?.ufs ?? [])
-      .filter((uf) => uf.total > 0)
+      .filter((uf) => uf.total > 0 && (!selectedRegion || regionOf(uf.sigla) === selectedRegion))
       .map((uf) => ({
         id: uf.sigla,
         uf: uf.sigla,
@@ -68,7 +77,7 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
         rate: uf.rate,
         kind: "uf" as const,
       }));
-  }, [municipalities, selectedSigla, summary]);
+  }, [municipalities, selectedRegion, selectedSigla, summary]);
 
   const rankingItems = useMemo<RankingItem[]>(() => {
     if (selectedSigla) {
@@ -82,25 +91,33 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
       }));
     }
 
-    return (summary?.ufs ?? []).map((uf) => ({
-      id: uf.sigla,
-      name: uf.nome,
-      detail: uf.sigla,
-      rate: uf.rate,
-      total: uf.total,
-      population: uf.population,
-    }));
-  }, [municipalities, selectedSigla, summary]);
+    return (summary?.ufs ?? [])
+      .filter((uf) => !selectedRegion || regionOf(uf.sigla) === selectedRegion)
+      .map((uf) => ({
+        id: uf.sigla,
+        name: uf.nome,
+        detail: uf.sigla,
+        rate: uf.rate,
+        total: uf.total,
+        population: uf.population,
+      }));
+  }, [municipalities, selectedRegion, selectedSigla, summary]);
 
+  const regionUfs = useMemo(
+    () => (summary?.ufs ?? []).filter((uf) => selectedRegion && regionOf(uf.sigla) === selectedRegion),
+    [selectedRegion, summary],
+  );
+  const regionStats = selectedRegion ? regionSnapshot(regionUfs) : null;
   const selectedState = selectedSigla ? BRAZIL_STATES_BY_SIGLA.get(selectedSigla) : null;
   const selectedUf = selectedSigla ? summary?.ufs.find((uf) => uf.sigla === selectedSigla) : null;
-  const scopeRate = selectedUf?.rate ?? summary?.rate;
-  const scopeTotal = selectedUf?.total ?? summary?.total ?? 0;
-  const title = selectedState ? selectedState.nome : "Brasil";
+  const scopeRate = selectedUf?.rate ?? regionStats?.rate ?? summary?.rate;
+  const scopeTotal = selectedUf?.total ?? regionStats?.total ?? summary?.total ?? 0;
+  const scopeDeaths = selectedUf?.deaths ?? regionStats?.deaths ?? summary?.deaths ?? 0;
+  const title = selectedState ? selectedState.nome : (selectedRegion ?? "Brasil");
   const subtitle = summary
     ? selectedState
-      ? `${selectedState.sigla} · ${formatRate(scopeRate)} CAT por 100 mil hab. · ${formatCount(scopeTotal)} comunicações`
-      : `${formatRate(summary.rate)} CAT por 100 mil hab. · clique em um estado ou no ranking`
+      ? `${selectedState.sigla} · ${selectedState.regiao} · ${formatRate(scopeRate)} CAT por 100 mil hab. · ${formatCount(scopeTotal)} comunicações`
+      : `${formatRate(scopeRate)} CAT por 100 mil hab. · clique em um estado ou no ranking`
     : "Carregando a taxa das comunicações CAT…";
 
   function openState(sigla: string) {
@@ -109,10 +126,19 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
     loadMunicipalities(sigla).catch(() => undefined);
   }
 
-  function backToBrazil() {
+  function backToScope() {
     setHighlightedId(null);
     setSelectedSigla(null);
     loadMunicipalities(null).catch(() => undefined);
+  }
+
+  function selectRegion(region: BrazilRegionId | null) {
+    setHighlightedId(null);
+    setSelectedRegion(region);
+    if (selectedSigla) {
+      setSelectedSigla(null);
+      loadMunicipalities(null).catch(() => undefined);
+    }
   }
 
   function selectRankingItem(id: string) {
@@ -130,14 +156,36 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
           <p className="sentinela-map-kicker">Mapa CAT</p>
           <h2>{title}</h2>
           <p>{subtitle}</p>
+          <p className="sentinela-map-about">
+            O Sentinela mostra onde os acidentes de trabalho acontecem no Brasil, a partir das
+            comunicações oficiais do INSS. Cada região tem uma cor, e o tom mais forte indica mais
+            casos a cada 100 mil habitantes.
+          </p>
         </div>
         {selectedSigla ? (
-          <button className="sentinela-map-back" type="button" onClick={backToBrazil}>
+          <button className="sentinela-map-back" type="button" onClick={backToScope}>
             <ArrowLeft size={16} weight="bold" />
-            Ver Brasil
+            {selectedRegion ? `Ver ${selectedRegion}` : "Ver Brasil"}
           </button>
         ) : null}
       </header>
+
+      <div className="sentinela-region-filter" role="group" aria-label="Filtrar por região">
+        <button aria-pressed={selectedRegion === null} type="button" onClick={() => selectRegion(null)}>
+          Brasil
+        </button>
+        {BRAZIL_REGIONS.map((region) => (
+          <button
+            aria-pressed={selectedRegion === region.id}
+            key={region.id}
+            type="button"
+            onClick={() => selectRegion(region.id)}
+          >
+            <i style={{ background: region.color }} />
+            {region.nome}
+          </button>
+        ))}
+      </div>
 
       <div className="sentinela-map-body">
         <div className="sentinela-map-canvas">
@@ -152,6 +200,7 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
               <BrazilMap
                 geojson={data}
                 selectedSigla={selectedSigla}
+                selectedRegion={selectedRegion}
                 points={points}
                 ratesByUf={ratesByUf}
                 highlightedId={highlightedId}
@@ -167,7 +216,9 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
         </div>
 
         <RateRanking
-          scopeLabel={selectedState ? `Municípios de ${selectedState.sigla}` : "Estados"}
+          scopeLabel={
+            selectedState ? `Municípios de ${selectedState.sigla}` : selectedRegion ? `Estados do ${selectedRegion}` : "Estados"
+          }
           loading={loadingSummary || (Boolean(selectedSigla) && loadingMunicipalities)}
           items={selectedSigla && loadingMunicipalities ? [] : rankingItems}
           activeId={selectedSigla ? highlightedId : selectedSigla}
@@ -176,18 +227,12 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
       </div>
 
       <footer className="sentinela-map-legend">
-        <span className="sentinela-rate-key">
-          <i />
-          menor taxa
-          <b />
-          maior taxa
-        </span>
-        <span>por 100 mil hab. · IBGE 2024</span>
+        <span>Tom mais forte, taxa maior · por 100 mil hab. · IBGE 2024</span>
         <span>
           {selectedSigla
             ? `${formatCount(points.length)} municípios · ${formatCount(unlocated)} sem coordenada`
             : `${formatCount(points.length)} UFs`}
-          {summary ? ` · ${formatCount(summary.deaths)} óbitos` : ""}
+          {summary ? ` · ${formatCount(scopeDeaths)} óbitos` : ""}
           {source === "ibge" ? " · malha IBGE" : source === "local" ? " · malha local" : ""}
           {geoError && source === "local" ? " (IBGE indisponível)" : ""}
         </span>

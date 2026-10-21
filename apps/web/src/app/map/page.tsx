@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MapPage } from "@sentinela/map";
+import { ThemeToggle } from "../components/theme-toggle";
 
 export default function Map() {
   return (
@@ -12,9 +13,12 @@ export default function Map() {
             <small>Mapa de acidentes CAT</small>
           </div>
         </div>
-        <Link className="ghost-action" href="/">
-          Voltar ao painel
-        </Link>
+        <div className="topbar-actions">
+          <ThemeToggle />
+          <Link className="ghost-action" href="/">
+            Voltar ao painel
+          </Link>
+        </div>
       </header>
 
       <section className="card map-stage">

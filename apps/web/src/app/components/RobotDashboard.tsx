@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ThemeToggle } from "./theme-toggle";
 
 type JobStatus = "idle" | "running" | "completed" | "failed";
 
@@ -36,7 +37,7 @@ const initialSnapshot: JobSnapshot = {
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 const officialDatasetUrl =
   process.env.NEXT_PUBLIC_DEFAULT_DATASET_URL ??
-  "https://dadosabertos.inss.gov.br/pt_BR/dataset/comunicacoes-de-acidente-de-trabalho-cat-plano-de-dados-abertos-jun-2023-a-jun-2025";
+  "https://dadosabertos.inss.gov.br/pt_BR/dataset/comunicacoes-de-acidente-de-trabalho-cat-plano-de-dados-abertos-jun-2023-a-dez-2027";
 
 export function RobotDashboard() {
   const [snapshot, setSnapshot] = useState<JobSnapshot>(initialSnapshot);
@@ -109,6 +110,7 @@ export function RobotDashboard() {
           </div>
         </div>
         <div className="topbar-actions">
+          <ThemeToggle />
           <Link className="ghost-action" href="/map">
             Mapa
           </Link>

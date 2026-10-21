@@ -32,6 +32,50 @@
   margin: 0.35rem 0 0;
 }
 
+.sentinela-map-about {
+  max-width: 62rem;
+}
+
+.sentinela-region-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.sentinela-region-filter button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 0.4rem;
+  padding: 0.38rem 0.75rem;
+}
+
+.sentinela-region-filter button i {
+  border-radius: 999px;
+  display: inline-block;
+  height: 0.6rem;
+  width: 0.6rem;
+}
+
+.sentinela-region-filter button[aria-pressed="true"] {
+  background: #fafafa;
+  border-color: #fafafa;
+  color: #18181b;
+}
+
+html[data-theme="light"] .sentinela-region-filter button[aria-pressed="true"] {
+  background: #18181b;
+  border-color: #18181b;
+  color: #fafafa;
+}
+
 .sentinela-map-kicker {
   color: var(--accent, #38bdf8);
   font-size: 0.72rem;
@@ -75,7 +119,7 @@
   position: relative;
 }
 
-.sentinela-leaflet {
+.leaflet-container.sentinela-leaflet {
   background: #020617;
   height: 100%;
   inset: 0;
@@ -116,12 +160,12 @@
 }
 
 .sentinela-rate-key i {
-  background: #0f2744;
+  background: #3f3f46;
   width: 2.4rem;
 }
 
 .sentinela-rate-key b {
-  background: #38bdf8;
+  background: #fafafa;
   width: 2.4rem;
 }
 
@@ -140,7 +184,7 @@
 
 .sentinela-map-tooltip {
   background: rgba(2, 6, 23, 0.94) !important;
-  border: 1px solid rgba(56, 189, 248, 0.28) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
   border-radius: 0.8rem !important;
   box-shadow: none !important;
   color: #eff6ff !important;
@@ -174,7 +218,7 @@
 }
 
 .leaflet-popup-content small {
-  color: #38bdf8;
+  color: #d4d4d8;
 }
 
 .leaflet-control-zoom a {
@@ -189,6 +233,10 @@
 
 .leaflet-interactive {
   cursor: pointer;
+}
+
+.sentinela-leaflet .leaflet-tile-pane {
+  filter: grayscale(1);
 }
 
 .sentinela-rate-panel {
@@ -293,7 +341,7 @@
 }
 
 .sentinela-rate-result-chip strong {
-  color: #7dd3fc;
+  color: #fafafa;
   font-size: 1.02rem;
 }
 
@@ -344,7 +392,7 @@
 }
 
 .sentinela-rate-bar-fill {
-  background: linear-gradient(90deg, rgba(14, 116, 144, 0.55), rgba(56, 189, 248, 0.42));
+  background: rgba(250, 250, 250, 0.22);
   bottom: 0;
   left: 0;
   position: absolute;
@@ -353,16 +401,16 @@
 
 .sentinela-rate-list button:hover,
 .sentinela-rate-list button.is-active {
-  color: #e0f2fe;
+  color: #fafafa;
 }
 
 .sentinela-rate-list button.is-active,
 .sentinela-rate-list button:hover {
-  background: rgba(56, 189, 248, 0.16);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .sentinela-rate-list button.is-active {
-  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(250, 250, 250, 0.4);
 }
 
 .sentinela-rate-copy,
@@ -386,7 +434,7 @@
 }
 
 .sentinela-rate-value {
-  color: #7dd3fc;
+  color: #fafafa;
   font-size: 0.84rem;
   font-variant-numeric: tabular-nums;
   font-weight: 800;
@@ -417,4 +465,67 @@
   .sentinela-map-canvas {
     min-height: 24rem;
   }
+}
+
+html[data-theme="light"] .sentinela-map-back,
+html[data-theme="light"] .sentinela-rate-formula,
+html[data-theme="light"] .sentinela-rate-list button {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme="light"] .sentinela-map-canvas,
+html[data-theme="light"] .sentinela-rate-panel,
+html[data-theme="light"] .sentinela-map-overlay {
+  background: rgba(248, 250, 252, 0.92);
+}
+
+html[data-theme="light"] .leaflet-container.sentinela-leaflet {
+  background: #f4f4f5;
+}
+
+html[data-theme="light"] .sentinela-rate-key i {
+  background: #e4e4e7;
+}
+
+html[data-theme="light"] .sentinela-rate-key b {
+  background: #18181b;
+}
+
+html[data-theme="light"] .sentinela-rate-bar-fill {
+  background: rgba(24, 24, 27, 0.22);
+}
+
+html[data-theme="light"] .sentinela-rate-list button.is-active {
+  box-shadow: inset 0 0 0 1px rgba(24, 24, 27, 0.45);
+}
+
+html[data-theme="light"] .sentinela-map-tooltip,
+html[data-theme="light"] .leaflet-popup-content-wrapper,
+html[data-theme="light"] .leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.97) !important;
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] .sentinela-map-tooltip span,
+html[data-theme="light"] .leaflet-popup-content p {
+  color: #475569;
+}
+
+html[data-theme="light"] .leaflet-control-zoom a {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] .sentinela-rate-op {
+  color: #334155;
+}
+
+html[data-theme="light"] .sentinela-rate-result-chip strong,
+html[data-theme="light"] .sentinela-rate-value {
+  color: #18181b;
+}
+
+html[data-theme="light"] .sentinela-rate-list button:hover,
+html[data-theme="light"] .sentinela-rate-list button.is-active {
+  color: #18181b;
 }

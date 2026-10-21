@@ -32,3 +32,27 @@ export const BRAZIL_STATES: BrazilStateMeta[] = [
 
 export const BRAZIL_STATES_BY_ID = new Map(BRAZIL_STATES.map((state) => [String(state.id), state]));
 export const BRAZIL_STATES_BY_SIGLA = new Map(BRAZIL_STATES.map((state) => [state.sigla, state]));
+
+export const BRAZIL_REGIONS = [
+  { id: "Norte", nome: "Norte", color: "#0d9488" },
+  { id: "Nordeste", nome: "Nordeste", color: "#ea580c" },
+  { id: "Centro-Oeste", nome: "Centro-Oeste", color: "#ca8a04" },
+  { id: "Sudeste", nome: "Sudeste", color: "#2563eb" },
+  { id: "Sul", nome: "Sul", color: "#009c3b" },
+] as const;
+
+export type BrazilRegionId = (typeof BRAZIL_REGIONS)[number]["id"];
+
+const REGION_COLOR = new Map(BRAZIL_REGIONS.map((region) => [region.id, region.color]));
+
+export function regionOf(sigla: string) {
+  const region = BRAZIL_STATES_BY_SIGLA.get(sigla)?.regiao;
+  if (region === "Norte" || region === "Nordeste" || region === "Centro-Oeste" || region === "Sudeste" || region === "Sul") {
+    return region;
+  }
+  return null;
+}
+
+export function regionColor(region: string) {
+  return REGION_COLOR.get(region as BrazilRegionId) ?? "#71717a";
+}

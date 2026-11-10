@@ -60,8 +60,10 @@ function MapViewport({
   return null;
 }
 
-const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-const LIGHT_TILES = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+const STREET_TILES =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+const STREET_ATTRIBUTION =
+  '&copy; <a href="https://www.esri.com/" rel="noreferrer">Esri</a>, TomTom, FAO, NOAA, USGS';
 
 function useMapTheme() {
   const [theme, setTheme] = useState<"dark" | "light">(() =>
@@ -161,7 +163,7 @@ export function BrazilMap({
       weight: selectedSigla ? 2 : 1.25,
       opacity: 1,
       fillColor: regionFill(feature?.properties.regiao ?? regionOf(sigla) ?? "", rate, maxRate, theme),
-      fillOpacity: selectedSigla ? 0.28 : rate === 0 ? 0.55 : 0.92,
+      fillOpacity: selectedSigla ? 0.22 : rate === 0 ? 0.34 : 0.72,
     };
   }
 
@@ -174,13 +176,8 @@ export function BrazilMap({
       maxZoom={12}
       maxBoundsViscosity={0.85}
       scrollWheelZoom
-      attributionControl={false}
     >
-      <TileLayer
-        key={theme}
-        url={theme === "light" ? LIGHT_TILES : DARK_TILES}
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CARTO'
-      />
+      <TileLayer url={STREET_TILES} attribution={STREET_ATTRIBUTION} maxNativeZoom={19} />
       <OccurrencePane />
       <MapViewport geojson={displayedGeoJson} focus={focus} />
       <FocusPoint point={highlightedPoint?.kind === "municipality" ? highlightedPoint : null} />
@@ -202,7 +199,7 @@ export function BrazilMap({
             mouseover: (event) => {
               event.target.setStyle({
                 weight: 2.5,
-                fillOpacity: selectedSigla ? 0.4 : 1,
+                fillOpacity: selectedSigla ? 0.34 : 0.84,
                 fillColor: regionFill(state.regiao, rate, maxRate, theme),
                 color: theme === "light" ? "#000" : "#fff",
               });

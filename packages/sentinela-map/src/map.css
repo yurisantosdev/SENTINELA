@@ -2,7 +2,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  height: 100%;
   min-height: 36rem;
 }
 
@@ -120,7 +119,7 @@ html[data-theme="light"] .sentinela-region-filter button[aria-pressed="true"] {
 }
 
 .leaflet-container.sentinela-leaflet {
-  background: #020617;
+  background: #d5e6f0;
   height: 100%;
   inset: 0;
   position: absolute;
@@ -235,8 +234,18 @@ html[data-theme="light"] .sentinela-region-filter button[aria-pressed="true"] {
   cursor: pointer;
 }
 
-.sentinela-leaflet .leaflet-tile-pane {
-  filter: grayscale(1);
+.leaflet-control-attribution {
+  background: rgba(2, 6, 23, 0.72) !important;
+  color: #cbd5e1 !important;
+  font-size: 0.62rem !important;
+  line-height: 1.3;
+  margin: 0 0.35rem 0.25rem !important;
+  max-width: 14rem;
+  white-space: normal;
+}
+
+.leaflet-control-attribution a {
+  color: #7dd3fc !important;
 }
 
 .sentinela-rate-panel {
@@ -265,6 +274,41 @@ html[data-theme="light"] .sentinela-region-filter button[aria-pressed="true"] {
   font-size: 0.82rem;
   line-height: 1.45;
   margin: 0.35rem 0 0;
+}
+
+.sentinela-rank-sort {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.7rem;
+}
+
+.sentinela-rank-sort button {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.28rem 0.6rem;
+}
+
+.sentinela-rank-sort button[aria-pressed="true"] {
+  background: #fafafa;
+  border-color: #fafafa;
+  color: #18181b;
+}
+
+.sentinela-rank-search {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.75rem;
+  color: inherit;
+  margin-top: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  width: 100%;
 }
 
 .sentinela-rate-formula {
@@ -480,7 +524,16 @@ html[data-theme="light"] .sentinela-map-overlay {
 }
 
 html[data-theme="light"] .leaflet-container.sentinela-leaflet {
-  background: #f4f4f5;
+  background: #d5e6f0;
+}
+
+html[data-theme="light"] .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #334155 !important;
+}
+
+html[data-theme="light"] .leaflet-control-attribution a {
+  color: #0369a1 !important;
 }
 
 html[data-theme="light"] .sentinela-rate-key i {
@@ -528,4 +581,331 @@ html[data-theme="light"] .sentinela-rate-value {
 html[data-theme="light"] .sentinela-rate-list button:hover,
 html[data-theme="light"] .sentinela-rate-list button.is-active {
   color: #18181b;
+}
+
+html[data-theme="light"] .sentinela-rank-sort button[aria-pressed="true"] {
+  background: #18181b;
+  border-color: #18181b;
+  color: #fafafa;
+}
+
+html[data-theme="light"] .sentinela-rank-search,
+html[data-theme="light"] .sentinela-compare-picks select {
+  background: #fff;
+  color: #18181b;
+}
+
+.sentinela-insights {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.sentinela-insights-intro h3,
+.sentinela-insight-card h4 {
+  margin: 0.15rem 0 0;
+}
+
+.sentinela-insights-intro p,
+.sentinela-insight-card header p,
+.sentinela-insight-note,
+.sentinela-insight-stories p {
+  color: var(--muted, #94a3b8);
+  line-height: 1.45;
+  margin: 0.35rem 0 0;
+}
+
+.sentinela-insight-kpis {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sentinela-insight-kpis article,
+.sentinela-insight-card {
+  background: rgba(2, 6, 23, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 1.15rem;
+  padding: 0.9rem 1rem;
+}
+
+.sentinela-insight-kpis span,
+.sentinela-insight-kpis small {
+  color: var(--muted, #94a3b8);
+  display: block;
+}
+
+.sentinela-insight-kpis span {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sentinela-insight-kpis strong {
+  display: block;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  letter-spacing: -0.04em;
+  margin: 0.25rem 0;
+}
+
+.sentinela-insight-kpis small {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.sentinela-insight-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sentinela-insight-card-wide,
+.sentinela-insight-stories {
+  grid-column: 1 / -1;
+}
+
+.sentinela-insight-card h4 {
+  font-size: 1rem;
+}
+
+.sentinela-composition {
+  background: rgba(148, 163, 184, 0.16);
+  border-radius: 999px;
+  display: flex;
+  height: 0.85rem;
+  margin-top: 0.9rem;
+  overflow: hidden;
+}
+
+.sentinela-composition span {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+}
+
+.sentinela-composition-legend {
+  display: grid;
+  gap: 0.55rem;
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+}
+
+.sentinela-composition-legend li {
+  align-items: center;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 0.7rem minmax(0, 1fr);
+}
+
+.sentinela-composition-legend i {
+  border-radius: 999px;
+  height: 0.7rem;
+  width: 0.7rem;
+}
+
+.sentinela-composition-legend strong,
+.sentinela-composition-legend small {
+  display: block;
+}
+
+.sentinela-composition-legend small {
+  color: var(--muted, #94a3b8);
+  font-size: 0.78rem;
+}
+
+.sentinela-hbar-list {
+  display: grid;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+}
+
+.sentinela-hbar-list li,
+.sentinela-hbar-list button {
+  align-items: center;
+  display: grid;
+  gap: 0.28rem 0.65rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.sentinela-hbar-list button {
+  background: transparent;
+  border: 0;
+  border-radius: 0.65rem;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.2rem 0.25rem;
+  text-align: left;
+  width: 100%;
+}
+
+.sentinela-hbar-list button.is-active,
+.sentinela-hbar-list button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sentinela-hbar-list span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sentinela-hbar-track {
+  background: rgba(148, 163, 184, 0.16);
+  border-radius: 999px;
+  grid-column: 1 / -1;
+  height: 0.55rem;
+  overflow: hidden;
+}
+
+.sentinela-hbar-track span {
+  background: #fafafa;
+  display: block;
+  height: 100%;
+}
+
+.sentinela-hbar-list strong {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.sentinela-scatter svg {
+  display: block;
+  height: auto;
+  margin-top: 0.4rem;
+  width: 100%;
+}
+
+.sentinela-scatter-axis {
+  stroke: rgba(148, 163, 184, 0.45);
+  stroke-width: 1;
+}
+
+.sentinela-scatter-label {
+  fill: #94a3b8;
+  font-size: 11px;
+}
+
+.sentinela-scatter circle {
+  cursor: pointer;
+  fill: rgba(250, 250, 250, 0.45);
+  stroke: rgba(56, 189, 248, 0.85);
+  stroke-width: 1.2;
+}
+
+.sentinela-scatter circle.is-active,
+.sentinela-scatter circle:hover,
+.sentinela-scatter circle:focus {
+  fill: #38bdf8;
+  outline: none;
+}
+
+.sentinela-compare-picks {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.85rem;
+}
+
+.sentinela-compare-picks label {
+  color: var(--muted, #94a3b8);
+  display: grid;
+  font-size: 0.75rem;
+  font-weight: 800;
+  gap: 0.3rem;
+}
+
+.sentinela-compare-picks select {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.7rem;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.45rem 0.55rem;
+}
+
+.sentinela-compare-table {
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.sentinela-compare-table th,
+.sentinela-compare-table td {
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  font-size: 0.86rem;
+  padding: 0.45rem 0.2rem;
+  text-align: right;
+}
+
+.sentinela-compare-table tbody th,
+.sentinela-compare-table thead th:first-child {
+  color: var(--muted, #94a3b8);
+  font-weight: 700;
+  text-align: left;
+}
+
+.sentinela-compare-table thead button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  text-align: right;
+}
+
+.sentinela-compare-table thead button:hover {
+  color: var(--accent, #38bdf8);
+}
+
+.sentinela-insight-stories ul {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+}
+
+.sentinela-insight-stories li {
+  background: rgba(15, 23, 42, 0.45);
+  border-radius: 0.9rem;
+  padding: 0.75rem 0.85rem;
+}
+
+.sentinela-insight-stories strong {
+  display: block;
+}
+
+@media (max-width: 980px) {
+  .sentinela-insight-kpis,
+  .sentinela-insight-grid,
+  .sentinela-compare-picks {
+    grid-template-columns: 1fr;
+  }
+}
+
+html[data-theme="light"] .sentinela-insight-kpis article,
+html[data-theme="light"] .sentinela-insight-card,
+html[data-theme="light"] .sentinela-insight-stories li {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+html[data-theme="light"] .sentinela-hbar-track span {
+  background: #18181b;
+}
+
+html[data-theme="light"] .sentinela-scatter circle {
+  fill: rgba(24, 24, 27, 0.35);
+}
+
+html[data-theme="light"] .sentinela-hbar-list button.is-active,
+html[data-theme="light"] .sentinela-hbar-list button:hover {
+  background: rgba(24, 24, 27, 0.06);
 }

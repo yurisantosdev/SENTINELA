@@ -5,10 +5,12 @@ import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { BRAZIL_REGIONS, BRAZIL_STATES_BY_SIGLA, regionOf, type BrazilRegionId } from "./brazil-states";
 import { formatCount, formatRate } from "./format";
+import { placeFromMetrics, type InsightPlace } from "./insights";
+import { MapInsights } from "./map-insights";
 import { RateRanking, type RankingItem } from "./rate-ranking";
 import { useBrazilGeo } from "./use-brazil-geo";
 import { useCatMapData } from "./use-cat-map";
-import type { MapPoint, UfMapStat } from "./types";
+import type { CatMetrics, MapPoint, UfMapStat } from "./types";
 import "./map.css";
 import "leaflet/dist/leaflet.css";
 
@@ -21,12 +23,30 @@ type MapPageProps = {
   apiBaseUrl?: string;
 };
 
-function regionSnapshot(ufs: UfMapStat[]) {
+function aggregateMetrics(ufs: UfMapStat[]): CatMetrics {
   const total = ufs.reduce((sum, uf) => sum + uf.total, 0);
   const population = ufs.reduce((sum, uf) => sum + uf.population, 0);
   const deaths = ufs.reduce((sum, uf) => sum + uf.deaths, 0);
-  const rate = population > 0 ? Math.round((total * 100_000) / population * 10) / 10 : null;
-  return { total, population, deaths, rate };
+  const typical = ufs.reduce((sum, uf) => sum + uf.typical, 0);
+  const commute = ufs.reduce((sum, uf) => sum + uf.commute, 0);
+  const disease = ufs.reduce((sum, uf) => sum + uf.disease, 0);
+  const rate = population > 0 ? Math.round(((total * 100_000) / population) * 10) / 10 : null;
+  return { total, population, deaths, typical, commute, disease, rate };
+}
+
+function toRankingItem(place: InsightPlace, detail: string): RankingItem {
+  return {
+    id: place.id,
+    name: place.name,
+    detail,
+    rate: place.rate,
+    total: place.total,
+    population: place.population,
+    deaths: place.deaths,
+    typical: place.typical,
+    commute: place.commute,
+    disease: place.disease,
+  };
 }
 
 export function MapPage({ apiBaseUrl }: MapPageProps) {
@@ -79,35 +99,46 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
       }));
   }, [municipalities, selectedRegion, selectedSigla, summary]);
 
-  const rankingItems = useMemo<RankingItem[]>(() => {
+  const insightPlaces = useMemo<InsightPlace[]>(() => {
     if (selectedSigla) {
-      return municipalities.map((point) => ({
-        id: point.id,
-        name: point.name,
-        detail: "por 100 mil",
-        rate: point.rate,
-        total: point.total,
-        population: point.population,
-      }));
+      return municipalities.map((point) =>
+        placeFromMetrics(point.id, point.name, {
+          total: point.total,
+          deaths: point.deaths,
+          typical: point.typical,
+          commute: point.commute,
+          disease: point.disease,
+          population: point.population,
+          rate: point.rate,
+        }),
+      );
     }
 
     return (summary?.ufs ?? [])
       .filter((uf) => !selectedRegion || regionOf(uf.sigla) === selectedRegion)
-      .map((uf) => ({
-        id: uf.sigla,
-        name: uf.nome,
-        detail: uf.sigla,
-        rate: uf.rate,
-        total: uf.total,
-        population: uf.population,
-      }));
+      .map((uf) => placeFromMetrics(uf.sigla, uf.nome, uf));
   }, [municipalities, selectedRegion, selectedSigla, summary]);
+
+  const rankingItems = useMemo<RankingItem[]>(
+    () => insightPlaces.map((place) => toRankingItem(place, selectedSigla ? "por 100 mil" : place.id)),
+    [insightPlaces, selectedSigla],
+  );
 
   const regionUfs = useMemo(
     () => (summary?.ufs ?? []).filter((uf) => selectedRegion && regionOf(uf.sigla) === selectedRegion),
     [selectedRegion, summary],
   );
-  const regionStats = selectedRegion ? regionSnapshot(regionUfs) : null;
+  const regionStats = selectedRegion ? aggregateMetrics(regionUfs) : null;
+  const regionGroups = useMemo(() => {
+    if (!summary || selectedSigla || selectedRegion) {
+      return undefined;
+    }
+    return BRAZIL_REGIONS.map((region) => ({
+      name: region.nome,
+      color: region.color,
+      metrics: aggregateMetrics((summary.ufs ?? []).filter((uf) => regionOf(uf.sigla) === region.id)),
+    }));
+  }, [selectedRegion, selectedSigla, summary]);
   const selectedState = selectedSigla ? BRAZIL_STATES_BY_SIGLA.get(selectedSigla) : null;
   const selectedUf = selectedSigla ? summary?.ufs.find((uf) => uf.sigla === selectedSigla) : null;
   const scopeRate = selectedUf?.rate ?? regionStats?.rate ?? summary?.rate;
@@ -216,6 +247,7 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
         </div>
 
         <RateRanking
+          key={selectedState ? selectedState.sigla : (selectedRegion ?? "Brasil")}
           scopeLabel={
             selectedState ? `Municípios de ${selectedState.sigla}` : selectedRegion ? `Estados do ${selectedRegion}` : "Estados"
           }
@@ -225,6 +257,27 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
           onSelect={selectRankingItem}
         />
       </div>
+
+      {summary && (selectedUf || regionStats || summary) ? (
+        <MapInsights
+          scopeName={title}
+          scope={selectedUf ?? regionStats ?? summary}
+          baselineName="Brasil"
+          baseline={summary}
+          contextName={selectedUf ? selectedState?.regiao : null}
+          contextRate={
+            selectedUf && selectedState
+              ? aggregateMetrics(summary.ufs.filter((uf) => regionOf(uf.sigla) === selectedState.regiao)).rate
+              : null
+          }
+          places={selectedSigla && loadingMunicipalities ? [] : insightPlaces}
+          placeNoun={selectedSigla ? "município" : "estado"}
+          groups={regionGroups}
+          activeId={highlightedId ?? selectedSigla}
+          loadingPlaces={Boolean(selectedSigla) && loadingMunicipalities}
+          onSelect={selectRankingItem}
+        />
+      ) : null}
 
       <footer className="sentinela-map-legend">
         <span>Tom mais forte, taxa maior · por 100 mil hab. · IBGE 2024</span>

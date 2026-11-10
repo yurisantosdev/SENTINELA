@@ -12,3 +12,14 @@ export function formatRate(value: number | null | undefined) {
     maximumFractionDigits: 1,
   }).format(value);
 }
+
+export function formatPercent(value: number | null | undefined, digits = 1) {
+  if (value == null || Number.isNaN(value)) {
+    return "—";
+  }
+
+  return `${new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value)}%`;
+}

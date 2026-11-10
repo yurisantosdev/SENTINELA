@@ -1,6 +1,8 @@
 "use client";
 
-import { formatCount, formatRate } from "./format";
+import { useMemo, useState } from "react";
+import { formatCount, formatPercent, formatRate } from "./format";
+import { lethality } from "./insights";
 
 export type RankingItem = {
   id: string;
@@ -9,7 +11,49 @@ export type RankingItem = {
   rate: number | null;
   total: number;
   population: number;
+  deaths: number;
+  typical: number;
+  commute: number;
+  disease: number;
 };
+
+type RankSort = "rate" | "total" | "lethality" | "commute";
+
+const SORTS: { id: RankSort; label: string }[] = [
+  { id: "rate", label: "Taxa" },
+  { id: "total", label: "Volume" },
+  { id: "lethality", label: "Óbitos" },
+  { id: "commute", label: "Trajeto" },
+];
+
+function sortScore(item: RankingItem, sort: RankSort) {
+  if (sort === "total") {
+    return item.total;
+  }
+  if (sort === "lethality") {
+    return lethality(item.deaths, item.total) ?? -1;
+  }
+  if (sort === "commute") {
+    return item.total > 0 ? (item.commute / item.total) * 100 : -1;
+  }
+  return item.rate ?? -1;
+}
+
+function sortReadout(item: RankingItem, sort: RankSort) {
+  if (sort === "total") {
+    return { value: formatCount(item.total), detail: "CAT" };
+  }
+  if (sort === "lethality") {
+    return { value: formatPercent(lethality(item.deaths, item.total)), detail: "com óbito" };
+  }
+  if (sort === "commute") {
+    return {
+      value: formatPercent(item.total > 0 ? (item.commute / item.total) * 100 : null),
+      detail: "trajeto",
+    };
+  }
+  return { value: formatRate(item.rate), detail: item.detail || "por 100 mil" };
+}
 
 type RateRankingProps = {
   scopeLabel: string;
@@ -20,19 +64,16 @@ type RateRankingProps = {
 };
 
 export function RateRanking({ scopeLabel, loading, items, activeId, onSelect }: RateRankingProps) {
-  const ranked = [...items].sort((left, right) => {
-    if (left.rate == null && right.rate == null) {
-      return right.total - left.total;
-    }
-    if (left.rate == null) {
-      return 1;
-    }
-    if (right.rate == null) {
-      return -1;
-    }
-    return right.rate - left.rate;
-  });
-  const maxRate = ranked.find((item) => item.rate != null)?.rate ?? 0;
+  const [sort, setSort] = useState<RankSort>("rate");
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
+  const ranked = useMemo(() => {
+    const visible = normalizedQuery
+      ? items.filter((item) => item.name.toLocaleLowerCase("pt-BR").includes(normalizedQuery))
+      : items;
+    return [...visible].sort((left, right) => sortScore(right, sort) - sortScore(left, sort));
+  }, [items, normalizedQuery, sort]);
+  const maxScore = ranked.reduce((max, item) => Math.max(max, sortScore(item, sort)), 0);
   const example =
     ranked.find((item) => item.id === activeId && item.rate != null && item.population > 0) ??
     ranked.find((item) => item.rate != null && item.population > 0);
@@ -42,6 +83,26 @@ export function RateRanking({ scopeLabel, loading, items, activeId, onSelect }: 
       <header className="sentinela-rate-header">
         <p className="sentinela-map-kicker">Ranking</p>
         <h3>{scopeLabel}</h3>
+        <div className="sentinela-rank-sort" role="group" aria-label="Ordenar ranking">
+          {SORTS.map((option) => (
+            <button
+              aria-pressed={sort === option.id}
+              key={option.id}
+              type="button"
+              onClick={() => setSort(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <input
+          className="sentinela-rank-search"
+          type="search"
+          value={query}
+          placeholder="Buscar lugar"
+          aria-label="Buscar lugar no ranking"
+          onChange={(event) => setQuery(event.target.value)}
+        />
       </header>
 
       {example ? (
@@ -83,31 +144,34 @@ export function RateRanking({ scopeLabel, loading, items, activeId, onSelect }: 
         <p className="sentinela-rate-empty">Nenhuma localidade com taxa neste recorte.</p>
       ) : (
         <ol className="sentinela-rate-list">
-          {ranked.map((item, index) => (
-            <li key={item.id}>
-              <button
-                className={item.id === activeId ? "is-active" : undefined}
-                type="button"
-                onClick={() => onSelect(item.id)}
-              >
-                <span
-                  className="sentinela-rate-bar-fill"
-                  style={{ width: `${maxRate ? ((item.rate ?? 0) / maxRate) * 100 : 0}%` }}
-                />
-                <span className="sentinela-rate-pos">{String(index + 1).padStart(2, "0")}</span>
-                <span className="sentinela-rate-copy">
-                  <strong>{item.name}</strong>
-                  <small>
-                    {formatCount(item.total)} CAT · {formatCount(item.population)} hab.
-                  </small>
-                </span>
-                <span className="sentinela-rate-value">
-                  {formatRate(item.rate)}
-                  <small>{item.detail}</small>
-                </span>
-              </button>
-            </li>
-          ))}
+          {ranked.map((item, index) => {
+            const readout = sortReadout(item, sort);
+            return (
+              <li key={item.id}>
+                <button
+                  className={item.id === activeId ? "is-active" : undefined}
+                  type="button"
+                  onClick={() => onSelect(item.id)}
+                >
+                  <span
+                    className="sentinela-rate-bar-fill"
+                    style={{ width: `${maxScore > 0 ? (Math.max(0, sortScore(item, sort)) / maxScore) * 100 : 0}%` }}
+                  />
+                  <span className="sentinela-rate-pos">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="sentinela-rate-copy">
+                    <strong>{item.name}</strong>
+                    <small>
+                      {formatCount(item.total)} CAT · {formatCount(item.population)} hab.
+                    </small>
+                  </span>
+                  <span className="sentinela-rate-value">
+                    {readout.value}
+                    <small>{readout.detail}</small>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ol>
       )}
     </aside>

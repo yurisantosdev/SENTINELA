@@ -8,6 +8,7 @@ import {
   expectedCats,
   lethality,
   pluralPlace,
+  taxaDe,
   topByTotal,
   type InsightPlace,
 } from "./insights";
@@ -31,6 +32,7 @@ type MapInsightsProps = {
   groups?: RegionGroup[];
   activeId: string | null;
   loadingPlaces?: boolean;
+  followsSelection?: boolean;
   onSelect: (id: string) => void;
 };
 
@@ -46,6 +48,7 @@ export function MapInsights({
   groups,
   activeId,
   loadingPlaces,
+  followsSelection,
   onSelect,
 }: MapInsightsProps) {
   const slices = compositionOf(scope);
@@ -63,6 +66,8 @@ export function MapInsights({
     [baseline, baselineName, groups, placeNoun, places, scope, scopeName],
   );
   const concentration = topByTotal(places, 3);
+  const shareOfBaseline =
+    followsSelection && baseline && baseline.total > 0 ? scope.total / baseline.total : null;
   const deathShare = lethality(scope.deaths, scope.total);
   const expected = baseline && baselineName !== scopeName ? expectedCats(scope.population, baseline.rate) : null;
   const gap = expected == null ? null : scope.total - expected;
@@ -88,7 +93,11 @@ export function MapInsights({
         <div>
           <p className="sentinela-map-kicker">Leituras</p>
           <h3>{scopeName}</h3>
-          <p>Os mesmos números do mapa, lidos pelo volume, pela taxa, pelo tipo do acidente e pelos óbitos.</p>
+          <p>
+            {followsSelection
+              ? `Números do ponto selecionado no mapa, comparados com ${baselineName}.`
+              : "Os mesmos números do mapa, lidos pelo volume, pela taxa, pelo tipo do acidente e pelos óbitos."}
+          </p>
         </div>
       </header>
 
@@ -103,7 +112,7 @@ export function MapInsights({
             {gap == null
               ? "Distância entre regiões"
               : alignedWithBaseline
-                ? `Na taxa do ${baselineName}`
+                ? `Na ${taxaDe(baselineName)}`
                 : gap > 0
                   ? "Acima do esperado"
                   : "Abaixo do esperado"}
@@ -119,25 +128,37 @@ export function MapInsights({
             {gap == null
               ? regionSpread
                 ? `${regionSpread.highest.name} ${formatRate(regionSpread.highest.metrics.rate)} · ${regionSpread.lowest.name} ${formatRate(regionSpread.lowest.metrics.rate)}`
-                : `taxa do ${baselineName}`
+                : taxaDe(baselineName)
               : alignedWithBaseline
                 ? `volume perto do esperado para a população`
-                : `CAT ${gap > 0 ? "a mais" : "a menos"} que a taxa do ${baselineName}`}
+                : `CAT ${gap > 0 ? "a mais" : "a menos"} que a ${taxaDe(baselineName)}`}
             {contextName && contextRate != null ? ` · ${contextName} ${formatRate(contextRate)}` : ""}
           </small>
         </article>
         <article>
           <span>Óbitos</span>
           <strong>{formatPercent(deathShare)}</strong>
-          <small>{formatCount(scope.deaths)} comunicações com óbito</small>
+          <small>
+            {scope.deaths === 1
+              ? "1 comunicação com óbito"
+              : `${formatCount(scope.deaths)} comunicações com óbito`}
+          </small>
         </article>
         <article>
-          <span>Concentração</span>
-          <strong>{places.length >= 3 ? formatPercent(concentration.share * 100, 0) : "—"}</strong>
+          <span>{shareOfBaseline != null ? `Parte de ${baselineName}` : "Concentração"}</span>
+          <strong>
+            {shareOfBaseline != null
+              ? formatPercent(shareOfBaseline * 100, 1)
+              : places.length >= 3
+                ? formatPercent(concentration.share * 100, 0)
+                : "—"}
+          </strong>
           <small>
-            {places.length >= 3
-              ? `das CAT nos 3 ${pluralPlace(placeNoun)} com mais casos`
-              : "poucos lugares neste recorte"}
+            {shareOfBaseline != null
+              ? "das comunicações deste recorte"
+              : places.length >= 3
+                ? `das CAT nos 3 ${pluralPlace(placeNoun)} com mais casos`
+                : "poucos lugares neste recorte"}
           </small>
         </article>
       </div>
@@ -170,7 +191,7 @@ export function MapInsights({
           <ScatterPlot places={scatterPlaces} placeNoun={placeNoun} activeId={activeId} onSelect={onSelect} />
         </article>
 
-        <PlaceCompare places={places} placeNoun={placeNoun} onSelect={onSelect} />
+        <PlaceCompare places={places} placeNoun={placeNoun} preferredId={activeId} onSelect={onSelect} />
 
         <article className="sentinela-insight-card sentinela-insight-stories">
           <header>
@@ -552,10 +573,12 @@ function formatAxisCount(value: number) {
 function PlaceCompare({
   places,
   placeNoun,
+  preferredId,
   onSelect,
 }: {
   places: InsightPlace[];
   placeNoun: "estado" | "município";
+  preferredId: string | null;
   onSelect: (id: string) => void;
 }) {
   const [leftId, setLeftId] = useState("");
@@ -563,13 +586,14 @@ function PlaceCompare({
   const placeKey = places.map((place) => place.id).join("\n");
 
   useEffect(() => {
+    const selected = preferredId ? places.find((place) => place.id === preferredId) : null;
     const byRate = [...places].filter((place) => place.rate != null).sort((left, right) => (right.rate ?? 0) - (left.rate ?? 0));
     const byTotal = [...places].sort((left, right) => right.total - left.total);
-    const left = byRate[0];
-    const right = byTotal.find((place) => place.id !== left?.id) ?? byRate[1];
+    const left = selected ?? byRate[0];
+    const right = byTotal.find((place) => place.id !== left?.id) ?? byRate.find((place) => place.id !== left?.id);
     setLeftId(left?.id ?? "");
     setRightId(right?.id ?? "");
-  }, [placeKey, places]);
+  }, [placeKey, places, preferredId]);
 
   const options = useMemo(
     () => [...places].sort((left, right) => left.name.localeCompare(right.name, "pt-BR")),

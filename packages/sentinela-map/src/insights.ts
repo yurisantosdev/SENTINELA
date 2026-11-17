@@ -38,6 +38,10 @@ export function pluralPlace(noun: "estado" | "município") {
   return noun === "estado" ? "estados" : "municípios";
 }
 
+export function taxaDe(name: string) {
+  return name === "Brasil" ? "taxa do Brasil" : `taxa de ${name}`;
+}
+
 export function placeFromMetrics(id: string, name: string, metrics: CatMetrics): InsightPlace {
   return { id, name, ...metrics };
 }
@@ -174,14 +178,14 @@ export function buildStories(input: {
       const relative = gap / expected;
       if (Math.abs(relative) < 0.05) {
         stories.push({
-          title: `Perto da taxa do ${input.baselineName}`,
+          title: `Perto da ${taxaDe(input.baselineName)}`,
           body: `${input.scopeName} fica a menos de 5% da taxa de referência (${formatRateInline(comparable.rate)} por 100 mil). A diferença é de cerca de ${formatCountInline(Math.abs(Math.round(gap)))} comunicações.`,
         });
       } else {
         const direction = gap > 0 ? "a mais" : "a menos";
         stories.push({
-          title: gap > 0 ? "Acima da referência nacional" : "Abaixo da referência nacional",
-          body: `Se ${input.scopeName} tivesse a taxa do ${input.baselineName} (${formatRateInline(comparable.rate)}), seriam esperadas cerca de ${formatCountInline(Math.round(expected))} CAT. Há ${formatCountInline(Math.abs(Math.round(gap)))} ${direction}.`,
+          title: gap > 0 ? "Acima da referência" : "Abaixo da referência",
+          body: `Se ${input.scopeName} tivesse a ${taxaDe(input.baselineName)} (${formatRateInline(comparable.rate)}), seriam esperadas cerca de ${formatCountInline(Math.round(expected))} CAT. Há ${formatCountInline(Math.abs(Math.round(gap)))} ${direction}.`,
         });
       }
     }

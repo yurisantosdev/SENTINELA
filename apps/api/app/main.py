@@ -8,7 +8,19 @@ from app.cat_map import municipalities_for_uf, summarize_ufs, warmup_map_cache
 from app.config import get_settings
 from app.importer import CatImporter
 from app.job_state import job_state
-from app.models import CatMapSummary, JobSnapshot, MunicipalityMapResponse, StartJobRequest
+from app.models import (
+    AskRequest,
+    AskResponse,
+    CatMapSummary,
+    JobSnapshot,
+    MunicipalityMapResponse,
+    PatternReportResponse,
+    RiskModelResponse,
+    StartJobRequest,
+)
+from app.assistant import ask_question
+from app.pattern_model import pattern_report
+from app.risk_model import risk_report
 
 
 settings = get_settings()
@@ -94,3 +106,18 @@ def get_cat_map_municipalities(sigla: str) -> MunicipalityMapResponse:
         ) from exc
 
     return MunicipalityMapResponse.model_validate(payload)
+
+
+@app.get("/api/cat/risk", response_model=RiskModelResponse)
+def get_cat_risk(refresh: bool = False) -> RiskModelResponse:
+    return RiskModelResponse.model_validate(risk_report(force=refresh))
+
+
+@app.get("/api/cat/patterns", response_model=PatternReportResponse)
+def get_cat_patterns(refresh: bool = False) -> PatternReportResponse:
+    return PatternReportResponse.model_validate(pattern_report(force=refresh))
+
+
+@app.post("/api/cat/ask", response_model=AskResponse)
+def ask_cat(payload: AskRequest) -> AskResponse:
+    return AskResponse.model_validate(ask_question(payload.question))

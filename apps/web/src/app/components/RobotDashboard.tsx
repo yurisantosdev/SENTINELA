@@ -133,7 +133,7 @@ export function RobotDashboard() {
             <span>CKAN</span>
             <span>ZIP automático</span>
             <span>MongoDB local</span>
-            <span>Upsert sem duplicar</span>
+            <span>Regressão logística</span>
           </div>
         </div>
 

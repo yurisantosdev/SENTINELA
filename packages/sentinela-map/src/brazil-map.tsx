@@ -16,6 +16,7 @@ type BrazilMapProps = {
   ratesByUf: Map<string, number>;
   highlightedId: string | null;
   onSelectState: (sigla: string) => void;
+  onSelectPoint: (point: MapPoint) => void;
 };
 
 function OccurrencePane() {
@@ -129,6 +130,7 @@ export function BrazilMap({
   ratesByUf,
   highlightedId,
   onSelectState,
+  onSelectPoint,
 }: BrazilMapProps) {
   const displayedGeoJson = useMemo(() => {
     return {
@@ -231,7 +233,10 @@ export function BrazilMap({
               fillOpacity: 0.95,
             }}
             eventHandlers={{
-              click: (event) => event.originalEvent.stopPropagation(),
+              click: (event) => {
+                event.originalEvent.stopPropagation();
+                onSelectPoint(point);
+              },
             }}
           >
             <Tooltip className="sentinela-map-tooltip" direction="top">

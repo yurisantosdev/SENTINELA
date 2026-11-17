@@ -141,10 +141,15 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
   }, [selectedRegion, selectedSigla, summary]);
   const selectedState = selectedSigla ? BRAZIL_STATES_BY_SIGLA.get(selectedSigla) : null;
   const selectedUf = selectedSigla ? summary?.ufs.find((uf) => uf.sigla === selectedSigla) : null;
+  const highlightedPlace = insightPlaces.find((place) => place.id === highlightedId) ?? null;
   const scopeRate = selectedUf?.rate ?? regionStats?.rate ?? summary?.rate;
   const scopeTotal = selectedUf?.total ?? regionStats?.total ?? summary?.total ?? 0;
   const scopeDeaths = selectedUf?.deaths ?? regionStats?.deaths ?? summary?.deaths ?? 0;
   const title = selectedState ? selectedState.nome : (selectedRegion ?? "Brasil");
+  const insightScope = highlightedPlace ?? selectedUf ?? regionStats ?? summary;
+  const insightName = highlightedPlace?.name ?? title;
+  const insightBaseline = highlightedPlace ? (selectedUf ?? summary) : summary;
+  const insightBaselineName = highlightedPlace ? (selectedState?.nome ?? "Brasil") : "Brasil";
   const subtitle = summary
     ? selectedState
       ? `${selectedState.sigla} · ${selectedState.regiao} · ${formatRate(scopeRate)} CAT por 100 mil hab. · ${formatCount(scopeTotal)} comunicações`
@@ -178,6 +183,14 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
       return;
     }
     openState(id);
+  }
+
+  function selectPoint(point: MapPoint) {
+    if (point.kind === "municipality") {
+      setHighlightedId(point.id);
+      return;
+    }
+    openState(point.uf);
   }
 
   return (
@@ -236,6 +249,7 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
                 ratesByUf={ratesByUf}
                 highlightedId={highlightedId}
                 onSelectState={openState}
+                onSelectPoint={selectPoint}
               />
               {loadingMunicipalities ? (
                 <div className="sentinela-map-overlay">Carregando municípios…</div>
@@ -260,21 +274,24 @@ export function MapPage({ apiBaseUrl }: MapPageProps) {
 
       {summary && (selectedUf || regionStats || summary) ? (
         <MapInsights
-          scopeName={title}
-          scope={selectedUf ?? regionStats ?? summary}
-          baselineName="Brasil"
-          baseline={summary}
-          contextName={selectedUf ? selectedState?.regiao : null}
+          scopeName={insightName}
+          scope={insightScope ?? summary}
+          baselineName={insightBaselineName}
+          baseline={insightBaseline}
+          contextName={highlightedPlace ? "Brasil" : selectedUf ? selectedState?.regiao : null}
           contextRate={
-            selectedUf && selectedState
-              ? aggregateMetrics(summary.ufs.filter((uf) => regionOf(uf.sigla) === selectedState.regiao)).rate
-              : null
+            highlightedPlace
+              ? summary?.rate
+              : selectedUf && selectedState
+                ? aggregateMetrics(summary.ufs.filter((uf) => regionOf(uf.sigla) === selectedState.regiao)).rate
+                : null
           }
           places={selectedSigla && loadingMunicipalities ? [] : insightPlaces}
           placeNoun={selectedSigla ? "município" : "estado"}
-          groups={regionGroups}
+          groups={highlightedPlace ? undefined : regionGroups}
           activeId={highlightedId ?? selectedSigla}
           loadingPlaces={Boolean(selectedSigla) && loadingMunicipalities}
+          followsSelection={Boolean(highlightedPlace)}
           onSelect={selectRankingItem}
         />
       ) : null}

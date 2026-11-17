@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { MapPage } from "@sentinela/map";
+import { PatternBoard } from "../components/PatternBoard";
+import { RiskReading } from "../components/RiskReading";
 import { ThemeToggle } from "../components/theme-toggle";
 
 export default function Map() {
@@ -23,6 +25,8 @@ export default function Map() {
 
       <section className="card map-stage">
         <MapPage apiBaseUrl={process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"} />
+        <PatternBoard />
+        <RiskReading />
       </section>
     </div>
   );

@@ -1,3 +1,4 @@
+import { DataChat } from "./components/DataChat";
 import "./globals.css";
 
 export default function RootLayout({
@@ -14,6 +15,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <DataChat />
       </body>
     </html>
   );

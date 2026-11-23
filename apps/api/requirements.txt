@@ -4,7 +4,7 @@ openpyxl
 pandas
 scikit-learn
 pydantic-settings
-pymongo
+pymongo[srv]
 python-dotenv
 requests
 uvicorn[standard]

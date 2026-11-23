@@ -10,7 +10,7 @@ from app.config import get_settings
 @lru_cache
 def get_mongo_client() -> MongoClient:
     settings = get_settings()
-    return MongoClient(settings.mongo_uri, serverSelectionTimeoutMS=5000)
+    return MongoClient(settings.mongo_uri, serverSelectionTimeoutMS=15000)
 
 
 def get_database() -> Database:

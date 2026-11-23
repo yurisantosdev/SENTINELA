@@ -1,16 +1,23 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated
 
 from dotenv import load_dotenv
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 
 class Settings(BaseSettings):
-    mongo_uri: Annotated[str, Field(alias="MONGO_URI")] = "mongodb://localhost:27017"
+    mongo_uri: Annotated[
+        str,
+        Field(
+            validation_alias=AliasChoices("MONGODB_URI", "MONGO_URI"),
+            serialization_alias="MONGODB_URI",
+        ),
+    ] = "mongodb://localhost:27017"
     mongo_database: Annotated[str, Field(alias="MONGO_DATABASE")] = "sentinela"
     mongo_collection: Annotated[str, Field(alias="MONGO_COLLECTION")] = "cat_comunicacoes"
     sentinela_dataset_url: Annotated[str, Field(alias="SENTINELA_DATASET_URL")] = (

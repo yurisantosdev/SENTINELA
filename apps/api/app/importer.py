@@ -43,14 +43,14 @@ class CatImporter:
 
                 self._state.set_resources_total(len(resources))
 
-                self._state.log(f"Conectando ao MongoDB em {self._settings.mongo_uri}.")
-                client = MongoClient(self._settings.mongo_uri, serverSelectionTimeoutMS=5000)
+                self._state.log("Conectando ao MongoDB.")
+                client = MongoClient(self._settings.mongo_uri, serverSelectionTimeoutMS=15000)
                 try:
                     client.admin.command("ping")
                 except ServerSelectionTimeoutError as exc:
                     raise RuntimeError(
-                        "MongoDB local não está acessível. Inicie com `docker compose up -d mongo` "
-                        "ou rode `npm run dev` pela raiz do projeto."
+                        "MongoDB não está acessível. Verifique MONGODB_URI no .env "
+                        "e a conectividade com o cluster."
                     ) from exc
 
                 collection = client[self._settings.mongo_database][self._settings.mongo_collection]
